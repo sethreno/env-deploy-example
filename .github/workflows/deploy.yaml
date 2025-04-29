@@ -9,23 +9,35 @@ on:
         required: true
 
 jobs:
+  setup:
+    environment: ${{ inputs.targetEnv }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Provision step # at least one step is required in a job
+        run: |
+          echo "Provisioning ${{ github.event.inputs.runner }}"
+    outputs:
+      runner: ubuntu-${{ vars.UBUNTU_VERSION }}
+      code_build_runner: "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
+
   deployment:
     environment: ${{ inputs.targetEnv }}
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
+    needs: setup
+    runs-on: ${{ needs.setup.outputs.runner }}
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
 
       - run: echo "demonstrates using an env variable to determine the runner type"
-      - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner, for example:"
-      - run: echo "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
+      - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner"
+      - run: echo "for example ${{ needs.setup.outputs.code_build_runner }}"
 
       - name: CDK Deploy
         run: echo "pretending to cdk deploy..."
 
   smoke-test:
-    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
-    needs: deployment
+    needs: [setup, deployment]
+    runs-on: ${{ needs.setup.outputs.runner }}
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
