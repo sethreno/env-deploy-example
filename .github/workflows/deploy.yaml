@@ -21,7 +21,6 @@ jobs:
       code_build_runner: "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
 
   deployment:
-    environment: ${{ inputs.targetEnv }}
     needs: setup
     runs-on: ${{ needs.setup.outputs.runner }}
     steps:
