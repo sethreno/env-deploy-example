@@ -13,9 +13,8 @@ jobs:
     environment: ${{ inputs.targetEnv }}
     runs-on: ubuntu-latest
     steps:
-      - name: Provision step # at least one step is required in a job
-        run: |
-          echo "Provisioning ${{ github.event.inputs.runner }}"
+      - name: Determine Runner Type
+        run: echo "determining runner type based on environment"
     outputs:
       runner: ubuntu-${{ vars.UBUNTU_VERSION }}
       code_build_runner: "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
