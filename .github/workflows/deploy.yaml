@@ -1,0 +1,31 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      targetEnv:
+        description: 'Environment to deploy to'
+        type: environment
+        required: true
+
+jobs:
+  deployment:
+    environment: ${{ inputs.targetEnv }}
+    runs-on: codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout Repo Code
+        uses: actions/checkout@v4
+
+      - name: CDK Deploy
+        run: echo "pretending to cdk deploy..."
+
+  smoke-test:
+    runs-on: codebuild-IdrtaBatchDevA9D3AAC4-I2kDMzcHtTuS-${{ github.run_id }}-${{ github.run_attempt }}
+    needs: deployment
+    steps:
+      - name: Checkout Repo Code
+        uses: actions/checkout@v4
+
+      - name: Smoke Test
+        run: echo "pretending to run smoke tests..."
+
