@@ -11,16 +11,20 @@ on:
 jobs:
   deployment:
     environment: ${{ inputs.targetEnv }}
-    runs-on: codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
+
+      - run: echo "demonstrates using an env variable to determine the runner type"
+      - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner, for example:"
+      - run: echo "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
 
       - name: CDK Deploy
         run: echo "pretending to cdk deploy..."
 
   smoke-test:
-    runs-on: codebuild-IdrtaBatchDevA9D3AAC4-I2kDMzcHtTuS-${{ github.run_id }}-${{ github.run_attempt }}
+    runs-on: ubuntu-${{ vars.UBUNTU_VERSION }}
     needs: deployment
     steps:
       - name: Checkout Repo Code
