@@ -1,5 +1,11 @@
 name: deploy
+# make it easy to tell which deployment is running
 run-name: deploy ${{ inputs.commit_to_deploy || 'main' }} to ${{ inputs.target_env || 'dev' }}
+
+concurrency:
+  # only allow one deployment at a time per environment
+  group: deploy-${{ github.event.inputs.target_env || 'dev' }}
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
@@ -10,7 +16,7 @@ on:
         required: true
 
       commit_to_deploy:
-        description: "Commitish to deploy. This can be a branch, tag, or SHA"
+        description: "Commit to deploy. This can be a branch, tag, or SHA"
         type: string
         required: true
   push:
@@ -42,9 +48,10 @@ jobs:
           fetch-depth: 0 # fetch all history for all branches and tags
           fetch-tags: true
 
-      - run: echo "demonstrates using an env variable to determine the runner type"
-      - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner"
-      - run: echo "for example ${{ needs.setup.outputs.code_build_runner }}"
+      - run: echo "demo using environment variables to determine the runner type"
+      - run: echo "using ubuntu flavor since this repo can't access aws,"
+      - run: echo "but we could also use a codebuild runner. e.g."
+      - run: echo "${{ needs.setup.outputs.code_build_runner }}"
 
       - name: Verify Version
         run: git describe --tags
@@ -64,4 +71,5 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
+
 
