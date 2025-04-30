@@ -1,21 +1,33 @@
 name: deploy
-run-name: deploy to ${{ inputs.targetEnv }}
+run-name: deploy to ${{ inputs.target_env }}
 
 on:
   workflow_dispatch:
     inputs:
-      targetEnv:
-        description: 'Environment to deploy to'
+      target_env:
+        description: "Environment to deploy to"
         type: environment
+        required: true
+
+      commit_to_deploy:
+        description: "Commitish to deploy. This can be a branch, tag, or SHA"
+        type: string
         required: true
 
 jobs:
   setup:
-    environment: ${{ inputs.targetEnv }}
+    environment: ${{ inputs.target_env }}
     runs-on: ubuntu-latest
     steps:
+      - name: Verify Version
+        run: git describe --tags
+
+      - name: Verify Most Recent Commit
+        run: git show
+
       - name: Determine Runner Type
         run: echo "determining runner type based on environment"
+
     outputs:
       runner: ubuntu-${{ vars.UBUNTU_VERSION }}
       code_build_runner: "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
@@ -26,10 +38,18 @@ jobs:
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_to_deploy }}
 
       - run: echo "demonstrates using an env variable to determine the runner type"
       - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner"
       - run: echo "for example ${{ needs.setup.outputs.code_build_runner }}"
+
+      - name: Verify Version
+        run: git describe --tags
+
+      - name: Verify Most Recent Commit
+        run: git show
 
       - name: CDK Deploy
         run: echo "pretending to cdk deploy..."
