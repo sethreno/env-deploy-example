@@ -13,10 +13,14 @@ on:
         description: "Commitish to deploy. This can be a branch, tag, or SHA"
         type: string
         required: true
+  push:
+    branches:
+      - main
 
 jobs:
   setup:
-    environment: ${{ inputs.target_env }}
+    # default to dev when triggered by push
+    environment: ${{ inputs.target_env || 'dev' }}
     runs-on: ubuntu-latest
     steps:
       - name: Determine Runner Type
@@ -33,7 +37,8 @@ jobs:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.commit_to_deploy }}
+          # default to main when triggered by push
+          ref: ${{ inputs.commit_to_deploy || 'main' }}
           fetch-depth: 0 # fetch all history for all branches and tags
           fetch-tags: true
 
@@ -59,4 +64,5 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
+
 
