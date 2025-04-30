@@ -1,5 +1,5 @@
 name: deploy
-run-name: deploy ${{ inputs.commit_to_deploy }} to ${{ inputs.target_env }}
+run-name: deploy ${{ inputs.commit_to_deploy || 'main' }} to ${{ inputs.target_env || 'dev' }}
 
 on:
   workflow_dispatch:
@@ -64,5 +64,4 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
-
 
