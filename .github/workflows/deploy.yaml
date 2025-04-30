@@ -1,5 +1,5 @@
 name: deploy
-run-name: deploy to ${{ inputs.target_env }}
+run-name: deploy ${{ inputs.commit_to_deploy }} to ${{ inputs.target_env }}
 
 on:
   workflow_dispatch:
