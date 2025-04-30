@@ -19,12 +19,6 @@ jobs:
     environment: ${{ inputs.target_env }}
     runs-on: ubuntu-latest
     steps:
-      - name: Verify Version
-        run: git describe --tags
-
-      - name: Verify Most Recent Commit
-        run: git show
-
       - name: Determine Runner Type
         run: echo "determining runner type based on environment"
 
