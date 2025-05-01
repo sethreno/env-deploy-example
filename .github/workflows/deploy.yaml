@@ -1,5 +1,11 @@
 name: deploy
-run-name: deploy ${{ inputs.commit_to_deploy || 'main' }} to ${{ inputs.target_env || 'dev' }}
+# make it easy to tell which deployment is running
+run-name: deploy ${{ github.ref_name }} to ${{ inputs.target_env || 'dev' }}
+
+concurrency:
+  # only allow one deployment at a time per environment
+  group: deploy-${{ github.event.inputs.target_env || 'dev' }}
+  cancel-in-progress: false
 
 on:
   workflow_dispatch:
@@ -7,11 +13,6 @@ on:
       target_env:
         description: "Environment to deploy to"
         type: environment
-        required: true
-
-      commit_to_deploy:
-        description: "Commitish to deploy. This can be a branch, tag, or SHA"
-        type: string
         required: true
   push:
     branches:
@@ -24,11 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Determine Runner Type
-        run: echo "determining runner type based on environment"
+        run: >
+          echo "determining runner type based on environment"
+          echo ${{ github }}
 
     outputs:
       runner: ubuntu-${{ vars.UBUNTU_VERSION }}
-      code_build_runner: "codebuild-${{ vars.CODE_BUILD_PROJECT_NAME  }}-${{ github.run_id }}-${{ github.run_attempt }}"
 
   deployment:
     needs: setup
@@ -37,14 +39,12 @@ jobs:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
         with:
-          # default to main when triggered by push
-          ref: ${{ inputs.commit_to_deploy || 'main' }}
           fetch-depth: 0 # fetch all history for all branches and tags
           fetch-tags: true
 
-      - run: echo "demonstrates using an env variable to determine the runner type"
-      - run: echo "were using an ubuntu flavor since this is personal repo, but we could also use a codebuild runner"
-      - run: echo "for example ${{ needs.setup.outputs.code_build_runner }}"
+      - run: echo "demo using environment variables to determine the runner type"
+      - run: echo "running on ${{ needs.setup.outputs.runner }}"
+      - run: cat /etc/lsb-release
 
       - name: Verify Version
         run: git describe --tags
