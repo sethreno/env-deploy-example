@@ -30,10 +30,8 @@ jobs:
       - name: Determine Runner Type
         run: echo "UBUNTU_VERSION_VAR_NAME=UBUNTU_VERSION_$(echo $target_env)" >> $GITHUB_ENV
 
-      - run: echo $UBUNTU_VERSION_VAR_NAME
-
-      - run: echo env ${{ vars[env.UBUNTU_VERSION_VAR_NAME] }}
-      - run: echo vars ${{ vars[vars.UBUNTU_VERSION_VAR_NAME] }}
+      - run: echo dolla $UBUNTU_VERSION_VAR_NAME
+      - run: echo env ${{ env.UBUNTU_VERSION_VAR_NAME }}
 
       - if: ${{ vars[env.UBUNTU_VERSION_VAR_NAME] == '' }}
         run: |
