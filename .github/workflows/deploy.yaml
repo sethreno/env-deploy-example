@@ -21,8 +21,11 @@ on:
 jobs:
   setup:
     # default to dev when triggered by push
-    environment: ${{ inputs.target_env || 'dev' }}
     runs-on: ubuntu-latest
+
+    env:
+      target_env: ${{ github.event.inputs.target_env || 'dev' }}
+
     steps:
       - name: Determine Runner Type
         run: >
@@ -30,11 +33,13 @@ jobs:
           echo ${{ github }}
 
     outputs:
-      runner: ubuntu-${{ vars.UBUNTU_VERSION }}
+      target_env: ${{ env.target_env }}
+      runner: ubuntu-${{ vars[format('UBUNTU_VERSION_{0}', env.target_env)] }}
 
   deployment:
     needs: setup
     runs-on: ${{ needs.setup.outputs.runner }}
+    environment: ${{ needs.setup.outputs.target_env }}
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
@@ -64,5 +69,3 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
-
-
