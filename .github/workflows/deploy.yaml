@@ -21,20 +21,33 @@ on:
 jobs:
   setup:
     # default to dev when triggered by push
-    environment: ${{ inputs.target_env || 'dev' }}
     runs-on: ubuntu-latest
+
+    env:
+      target_env: ${{ github.event.inputs.target_env || 'dev' }}
+
     steps:
       - name: Determine Runner Type
-        run: >
-          echo "determining runner type based on environment"
-          echo ${{ github }}
+        run: echo "UBUNTU_VERSION_VAR_NAME=UBUNTU_VERSION_$(echo $target_env)" >> $GITHUB_ENV
+
+      - run: echo dolla $UBUNTU_VERSION_VAR_NAME
+      - run: echo env ${{ env.UBUNTU_VERSION_VAR_NAME }}
+
+
+      - name: Verify UBUNTU_VERSION_{ENV} is set for ${{ env.target_env }}
+        if: ${{ vars[env.UBUNTU_VERSION_VAR_NAME] == '' }}
+        run: |
+          echo "$UBUNTU_VERSION_VAR_NAME is not configured"
+          exit 1
 
     outputs:
-      runner: ubuntu-${{ vars.UBUNTU_VERSION }}
+      target_env: ${{ env.target_env }}
+      runner: ubuntu-${{ vars[env.UBUNTU_VERSION_VAR_NAME] }}
 
   deployment:
     needs: setup
     runs-on: ${{ needs.setup.outputs.runner }}
+    environment: ${{ needs.setup.outputs.target_env }}
     steps:
       - name: Checkout Repo Code
         uses: actions/checkout@v4
@@ -64,5 +77,3 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
-
-
