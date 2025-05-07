@@ -29,12 +29,18 @@ jobs:
     steps:
       - name: Determine Runner Type
         run: >
+          echo "UBUNTU_VERSION_VAR_NAME=UBUNTU_VERSION_$(echo $target_env)" >> $GITHUB_ENV
           echo "determining runner type based on environment"
-          echo ${{ github }}
+          echo $UBUNTU_VERSION_VAR_NAME
+
+      - if: ${{ vars[UBUNTU_VERSION_VAR_NAME] == '' }}
+        run: |
+          echo "$UBUNTU_VERSION_VAR_NAME is not configured"
+          exit 1
 
     outputs:
       target_env: ${{ env.target_env }}
-      runner: ubuntu-${{ vars[format('UBUNTU_VERSION_{0}', env.target_env)] }}
+      runner: ubuntu-${{ vars[env.UBUNTU_VERSION_VAR_NAME] }}
 
   deployment:
     needs: setup
