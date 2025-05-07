@@ -33,7 +33,9 @@ jobs:
       - run: echo dolla $UBUNTU_VERSION_VAR_NAME
       - run: echo env ${{ env.UBUNTU_VERSION_VAR_NAME }}
 
-      - if: ${{ vars[env.UBUNTU_VERSION_VAR_NAME] == '' }}
+
+      - name: Verify UBUNTU_VERSION_{ENV} is set for ${{ env.target_env }}
+        if: ${{ vars[env.UBUNTU_VERSION_VAR_NAME] == '' }}
         run: |
           echo "$UBUNTU_VERSION_VAR_NAME is not configured"
           exit 1
