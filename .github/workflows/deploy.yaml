@@ -33,7 +33,7 @@ jobs:
           echo "determining runner type based on environment"
           echo $UBUNTU_VERSION_VAR_NAME
 
-      - if: ${{ vars[UBUNTU_VERSION_VAR_NAME] == '' }}
+      - if: ${{ vars[vars.UBUNTU_VERSION_VAR_NAME] == '' }}
         run: |
           echo "$UBUNTU_VERSION_VAR_NAME is not configured"
           exit 1
