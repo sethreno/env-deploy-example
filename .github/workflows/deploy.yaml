@@ -21,8 +21,8 @@ on:
         default: dev
       dev_testing_timeout:
         description: >
-          Only applies when deploying feature branches to dev.
           Timeout in minutes for the manual approval step.
+          (Only applies when deploying feature branches to dev.)
         type: number
         required: true
         default: 60
