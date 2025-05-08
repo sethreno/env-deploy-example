@@ -21,8 +21,8 @@ on:
         default: dev
       dev_testing_timeout:
         description: >
-          "Only applies when deploying feature branches to dev. "
-          "Timeout in minutes for the manual approval step."
+          Only applies when deploying feature branches to dev.
+          Timeout in minutes for the manual approval step.
         type: number
         required: true
         default: 60
@@ -105,7 +105,7 @@ jobs:
           minimum-approvals: 1
           issue-title: "${{ github.actor }} testing branch `${{ github.ref_name }}` in dev"
           issue-body: >
-            "Please approve when done testing your feature branch: `${{ github.ref_name }}` "
-            "to free up the dev environment for other developers."
+            Please approve when done testing your feature branch: `${{ github.ref_name }}`
+            to free up the dev environment for other developers.
           exclude-workflow-initiator-as-approver: false
           timeout-minutes: ${{ github.event.inputs.dev_testing_timeout || 60 }}
