@@ -77,3 +77,28 @@ jobs:
 
       - name: Smoke Test
         run: echo "pretending to run smoke tests..."
+
+  # This runs only when deploying a feature branch to dev.
+  # It cretes a GitHub issue assigned to the user who triggered the workflow.
+  # Once the user approves the issue, it will run the redeploy develop and let
+  # the next dev deploy run if one is pending.
+  redeploy-develop-after-pause:
+    needs: [setup, deployment]
+    runs-on: ${{ needs.setup.outputs.runner }}
+    if: ${{ github.event.inputs.target_env == 'dev' && github.ref_name != 'develop' }}
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: ${{ github.actor }}
+          minimum-approvals: 1
+          issue-title: "Redeploy develop to dev"
+          issue-body: "Please approve or deny the deployment develop to dev when you are done testing ${{ github.ref_name }}"
+          exclude-workflow-initiator-as-approver: false
+          timeout-minutes: 60
+
+      - name: Redeploy Dev
+        run: echo "pretending to redeploy dev..."
+        env:
+          TARGET_ENV: ${{ needs.setup.outputs.target_env }}
+          RUNNER: ${{ needs.setup.outputs.runner }}
