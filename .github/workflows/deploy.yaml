@@ -83,7 +83,10 @@ jobs:
   # Once the user approves the issue, it will run the redeploy develop and let
   # the next dev deploy run if one is pending.
   redeploy-develop-after-pause:
-    needs: [setup, deployment]
+    # write needed to create the issue
+    permissions:
+      issues: write
+    needs: [setup, deployment, smoke-test]
     runs-on: ${{ needs.setup.outputs.runner }}
     if: ${{ github.event.inputs.target_env == 'dev' && github.ref_name != 'develop' }}
     steps:
