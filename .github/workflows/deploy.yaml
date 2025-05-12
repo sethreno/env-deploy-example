@@ -4,7 +4,7 @@ run-name: deploy ${{ github.ref_name }} to ${{ inputs.target_env || 'dev' }}
 
 concurrency:
   # only allow one deployment at a time per environment
-  group: deploy-${{ github.event.inputs.target_env || 'dev' }}
+  group: deploy-${{ inputs.target_env || 'dev' }}
   cancel-in-progress: false
 
 on:
@@ -19,6 +19,11 @@ on:
         type: environment
         required: true
         default: dev
+      skip_pause:
+        description: "Skip pause for testing (only applies to deploying feature branches to dev)"
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   setup:
@@ -26,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      target_env: ${{ github.event.inputs.target_env || 'dev' }}
+      target_env: ${{ inputs.target_env || 'dev' }}
 
     steps:
       - name: Determine Runner Type
@@ -84,7 +89,10 @@ jobs:
   # additional deployments until the workflow is cancelled.
   pause-for-dev-testing:
     needs: [setup, deployment, smoke-test]
-    runs-on: fake-runner-that-will-never-run
-    if: ${{ github.event.inputs.target_env == 'dev' && github.ref_name != 'main' }}
+    runs-on: paused-for-testing-click-cancel-to-continue
+    if: ${{ !inputs.skip_pause
+      && inputs.target_env == 'dev'
+      && github.ref_name != 'main'
+      }}
     steps:
       - run: echo "cancel the workflow when done testing your feature branch"
