@@ -27,10 +27,10 @@ on:
 
 jobs:
   setup:
-    # default to dev when triggered by push
     runs-on: ubuntu-latest
 
     env:
+      # default to dev when triggered by push
       target_env: ${{ inputs.target_env || 'dev' }}
 
     steps:
@@ -85,14 +85,17 @@ jobs:
         run: echo "pretending to run smoke tests..."
 
   # This runs only when deploying a feature branch to dev.
-  # It gets assigned to a fake runner that will never run which blocks
-  # additional deployments until the workflow is cancelled.
+  # It's marked as a deployment to the "dev-testing" environment which is not a
+  # real environment but a mechanism to block additional deployments to dev until
+  # this job is complete. This allows the developer to test the deployment in dev
+  # before merging the PR to main.
   pause-for-dev-testing:
-    needs: [setup, deployment, smoke-test]
-    runs-on: paused-for-testing-click-cancel-to-continue
     if: ${{ !inputs.skip_pause
       && inputs.target_env == 'dev'
       && github.ref_name != 'main'
       }}
+    runs-on: ubuntu-latest
+    environment: dev-testing
+    needs: [setup, deployment, smoke-test]
     steps:
-      - run: echo "cancel the workflow when done testing your feature branch"
+      - run: echo "done testing"
