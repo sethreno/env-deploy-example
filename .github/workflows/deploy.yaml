@@ -19,18 +19,13 @@ on:
         type: environment
         required: true
         default: dev
-      skip_pause:
-        description: "Skip pause for testing (only applies to deploying feature branches to dev)"
-        type: boolean
-        required: true
-        default: false
 
 jobs:
   setup:
-    # default to dev when triggered by push
     runs-on: ubuntu-latest
 
     env:
+      # default to dev when triggered by push
       target_env: ${{ inputs.target_env || 'dev' }}
 
     steps:
@@ -85,14 +80,16 @@ jobs:
         run: echo "pretending to run smoke tests..."
 
   # This runs only when deploying a feature branch to dev.
-  # It gets assigned to a fake runner that will never run which blocks
-  # additional deployments until the workflow is cancelled.
+  # It's marked as a deployment to the "dev-testing" environment which is not a
+  # real environment but a mechanism to block additional deployments to dev until
+  # this job is complete.
+  #
+  # Once a developer is done testing they can unblock the dev environment by approving
+  # the deployment to the "dev-testing" environment.
   pause-for-dev-testing:
+    if: ${{ inputs.target_env == 'dev' && github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    environment: __dev-testing__
     needs: [setup, deployment, smoke-test]
-    runs-on: paused-for-testing-click-cancel-to-continue
-    if: ${{ !inputs.skip_pause
-      && inputs.target_env == 'dev'
-      && github.ref_name != 'main'
-      }}
     steps:
-      - run: echo "cancel the workflow when done testing your feature branch"
+      - run: echo "done testing"
