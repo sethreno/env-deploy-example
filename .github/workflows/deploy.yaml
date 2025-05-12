@@ -95,7 +95,7 @@ jobs:
       && github.ref_name != 'main'
       }}
     runs-on: ubuntu-latest
-    environment: dev-testing
+    environment: __dev-testing__
     needs: [setup, deployment, smoke-test]
     steps:
       - run: echo "done testing"
