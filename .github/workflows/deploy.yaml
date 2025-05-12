@@ -19,11 +19,6 @@ on:
         type: environment
         required: true
         default: dev
-      skip_pause:
-        description: "Skip pause for testing (only applies to deploying feature branches to dev)"
-        type: boolean
-        required: true
-        default: false
 
 jobs:
   setup:
@@ -87,13 +82,12 @@ jobs:
   # This runs only when deploying a feature branch to dev.
   # It's marked as a deployment to the "dev-testing" environment which is not a
   # real environment but a mechanism to block additional deployments to dev until
-  # this job is complete. This allows the developer to test the deployment in dev
-  # before merging the PR to main.
+  # this job is complete.
+  #
+  # Once a developer is done testing they can unblock the dev environment by approving
+  # the deployment to the "dev-testing" environment.
   pause-for-dev-testing:
-    if: ${{ !inputs.skip_pause
-      && inputs.target_env == 'dev'
-      && github.ref_name != 'main'
-      }}
+    if: ${{ inputs.target_env == 'dev' && github.ref_name != 'main' }}
     runs-on: ubuntu-latest
     environment: __dev-testing__
     needs: [setup, deployment, smoke-test]
