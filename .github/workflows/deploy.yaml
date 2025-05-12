@@ -4,7 +4,7 @@ run-name: deploy ${{ github.ref_name }} to ${{ inputs.target_env || 'dev' }}
 
 concurrency:
   # only allow one deployment at a time per environment
-  group: deploy-${{ github.event.inputs.target_env || 'dev' }}
+  group: deploy-${{ inputs.target_env || 'dev' }}
   cancel-in-progress: false
 
 on:
@@ -19,13 +19,11 @@ on:
         type: environment
         required: true
         default: dev
-      dev_testing_timeout:
-        description: >
-          Timeout in minutes for the manual approval step.
-          (Only applies when deploying feature branches to dev.)
-        type: number
+      skip_pause:
+        description: "Skip pause for testing (only applies to deploying feature branches to dev)"
+        type: boolean
         required: true
-        default: 60
+        default: false
 
 jobs:
   setup:
@@ -33,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      target_env: ${{ github.event.inputs.target_env || 'dev' }}
+      target_env: ${{ inputs.target_env || 'dev' }}
 
     steps:
       - name: Determine Runner Type
@@ -87,25 +85,14 @@ jobs:
         run: echo "pretending to run smoke tests..."
 
   # This runs only when deploying a feature branch to dev.
-  # It cretes a GitHub issue assigned to the user who triggered the workflow.
-  # Once the user approves the issue this step will complete and let the next
-  # deploy run if one is pending.
+  # It gets assigned to a fake runner that will never run which blocks
+  # additional deployments until the workflow is cancelled.
   pause-for-dev-testing:
-    # write needed to create the issue via api
-    permissions:
-      issues: write
     needs: [setup, deployment, smoke-test]
-    runs-on: ${{ needs.setup.outputs.runner }}
-    if: ${{ github.event.inputs.target_env == 'dev' && github.ref_name != 'main' }}
+    runs-on: paused-for-testing-click-cancel-to-continue
+    if: ${{ !inputs.skip_pause
+      && inputs.target_env == 'dev'
+      && github.ref_name != 'main'
+      }}
     steps:
-      - uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: ${{ github.actor }}
-          minimum-approvals: 1
-          issue-title: "${{ github.actor }} testing branch `${{ github.ref_name }}` in dev"
-          issue-body: >
-            Please approve when done testing your feature branch: `${{ github.ref_name }}`
-            to free up the dev environment for other developers.
-          exclude-workflow-initiator-as-approver: false
-          timeout-minutes: ${{ github.event.inputs.dev_testing_timeout || 60 }}
+      - run: echo "cancel the workflow when done testing your feature branch"
