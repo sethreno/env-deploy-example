@@ -65,14 +65,12 @@
         text-align: center;
         display: none;
         margin-top: 20px;
-      }
-      .token-input {
+      }      .token-input {
         width: 100%;
-        max-width: 400px;
-        margin: 20px auto;
         display: flex;
         gap: 10px;
         align-items: center;
+        margin-bottom: 10px;
       }
       .token-input input {
         flex: 1;
@@ -88,15 +86,13 @@
         border: 2px solid #333;
         border-radius: 4px;
         cursor: pointer;
-        transition: transform 0.1s;
       }
       .token-input button:hover {
-        transform: scale(1.05);
+        background: #f5f5f5;
       }
       .auth-status {
-        text-align: center;
-        margin-bottom: 20px;
         font-size: 14px;
+        margin-bottom: 20px;
       }
       .auth-status.authenticated {
         color: #4caf50;
@@ -187,24 +183,26 @@
           <span class="toggle-icon">▼</span>
         </button>
         <div id="configContent" class="config-content">
-          <h3>Repositories</h3>
-          <ul id="repoList" class="config-list"></ul>
-          <button id="addRepo" class="add-button">Add Repository</button>
-          
+          <h3>GitHub Authentication</h3>
+          <div class="token-input">
+            <input
+              type="password"
+              id="tokenInput"
+              placeholder="Enter GitHub Personal Access Token"
+            />
+            <button id="saveToken">Save Token</button>
+          </div>
+          <div id="authStatus" class="auth-status"></div>
+
           <h3>Environments</h3>
           <ul id="envList" class="config-list"></ul>
           <button id="addEnv" class="add-button">Add Environment</button>
+
+          <h3>Repositories</h3>
+          <ul id="repoList" class="config-list"></ul>
+          <button id="addRepo" class="add-button">Add Repository</button>
         </div>
       </div>
-      <div class="token-input">
-        <input
-          type="password"
-          id="tokenInput"
-          placeholder="Enter GitHub Personal Access Token"
-        />
-        <button id="saveToken">Save Token</button>
-      </div>
-      <div id="authStatus" class="auth-status"></div>
       <div id="deploymentGrid" class="deployment-grid"></div>
       <div id="errorMessage" class="error-message"></div>
     </div>
