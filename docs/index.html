@@ -106,7 +106,7 @@
       }
       .config-section {
         margin: 20px auto;
-        max-width: 600px;
+        max-width: 800px;
       }
       .config-toggle {
         width: 100%;
@@ -146,11 +146,16 @@
         align-items: center;
       }
       .config-item input {
-        flex: 1;
         padding: 8px;
         border: 2px solid #333;
         border-radius: 4px;
         font-size: 14px;
+      }
+      .config-item input[type="text"] {
+        flex: 1;
+      }
+      .config-item input[data-field="displayName"] {
+        flex: 2;
       }
       .config-item button {
         padding: 8px 16px;
@@ -274,8 +279,15 @@
           const li = document.createElement("li");
           li.className = "config-item";
           li.innerHTML = `
-            <input type="text" placeholder="Owner" value="${repo.owner}" data-field="owner">
-            <input type="text" placeholder="Repository" value="${repo.repo}" data-field="repo">
+            <input type="text" placeholder="Owner" value="${
+              repo.owner
+            }" data-field="owner">
+            <input type="text" placeholder="Repository" value="${
+              repo.repo
+            }" data-field="repo">
+            <input type="text" placeholder="Display Name (optional)" value="${
+              repo.displayName || ""
+            }" data-field="displayName">
             <button class="remove">✕</button>
           `;
 
@@ -343,9 +355,8 @@
           envList.appendChild(li);
         });
       }
-
       addRepoButton.addEventListener("click", () => {
-        config.repositories.push({ owner: "", repo: "" });
+        config.repositories.push({ owner: "", repo: "", displayName: "" });
         renderConfigLists();
       });
 
@@ -489,10 +500,10 @@
             const card = document.createElement("div");
             card.className = "deployment-card";
             card.style.backgroundColor = config.colors[env];
-
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
-            repoName.textContent = deployment.repository.repo;
+            repoName.textContent =
+              deployment.repository.displayName || deployment.repository.repo;
 
             const branchName = document.createElement("div");
             branchName.className = "branch-name";
