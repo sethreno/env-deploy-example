@@ -1,7 +1,10 @@
-# env-deploy-example
-Demonstrates using GitHub environments to track deployments.
+# GitHub Environment Deployments Demo
 
-Includes a UI that shows the latest branch that's been deployed to each environment.
-https://sethreno.github.io/env-deploy-example/
+Demonstrates using GitHub environments to track deployments and a "queueing"
+system for dev environment deployments.
 
-# 
+The use of GitHub environments enables the use of custom [Environment
+Deployment Status UI](https://sethreno.github.io/env-deploy-example/) which
+provides an overview of deployments for a configurable list of repos.
+
+# ![alt text](image.png)
