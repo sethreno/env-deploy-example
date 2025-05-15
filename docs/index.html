@@ -4,14 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Environment Deployment Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
-          "Segoe UI Emoji", "Segoe UI Symbol";
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+          "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
         margin: 0;
         padding: 20px;
         background-color: #f0f0f0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       .container {
         max-width: 1200px;
@@ -59,15 +67,22 @@
       }
       .deployment-card.release {
         border-style: dashed;
-        border-color: lightskyblue;
+        border-color: darkslategrey;
       }
       .deployment-card.feature {
         border-style: dashed;
-        border-color: orange;
+        border-color: darkslategrey;
       }
       .deployment-card .repo-name {
         font-size: 14px;
         margin-bottom: 8px;
+      }
+      .deployment-card a {
+        color: auto;
+        /*text-decoration: none;*/
+      }
+      .deployment-card a:hover {
+        text-decoration: underline;
       }
       .deployment-card .branch-name {
         font-size: 12px;
@@ -540,35 +555,49 @@
               card.classList.add("feature");
             }
 
+            // Repository name
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
             repoName.textContent =
               deployment.repository.displayName || deployment.repository.repo;
+
             const branchInfo = document.createElement("div");
             branchInfo.className = "branch-info";
 
-            // Branch name line with arrow
+            // Branch name line with arrow and link
             const branchName = document.createElement("div");
             branchName.className = "branch-name";
-            branchName.textContent = `↳ ${deployment.ref || "Unknown"}`;
+            branchName.textContent = "↳ ";
+            if (deployment.ref) {
+              const branchLink = document.createElement("a");
+              branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
+              branchLink.target = "_blank";
+              branchLink.textContent = deployment.ref;
+              branchName.appendChild(branchLink);
+            } else {
+              branchName.appendChild(document.createTextNode("Unknown"));
+            }
             branchInfo.appendChild(branchName);
 
-            // SHA line
+            // SHA line with link
             if (deployment.sha) {
               const shaLine = document.createElement("div");
               shaLine.className = "sha";
-              shaLine.textContent = deployment.sha.substring(0, 7);
+              const shaLink = document.createElement("a");
+              shaLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/commit/${deployment.sha}`;
+              shaLink.target = "_blank";
+              shaLink.textContent = deployment.sha.substring(0, 7);
+              shaLine.appendChild(shaLink);
               branchInfo.appendChild(shaLine);
             }
 
-            // Time line
+            // Time line with workflow run link
             if (deployment.created_at) {
               const timeLine = document.createElement("div");
               timeLine.className = "time";
               const date = new Date(deployment.created_at);
-              timeLine.textContent = date
+              const formattedTime = date
                 .toLocaleString("sv", {
-                  // sv locale gives us yyyy-MM-dd HH:mm format
                   year: "numeric",
                   month: "2-digit",
                   day: "2-digit",
@@ -577,6 +606,11 @@
                   hour12: false,
                 })
                 .replace(" ", " ");
+              const timeLink = document.createElement("a");
+              timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
+              timeLink.target = "_blank";
+              timeLink.textContent = formattedTime;
+              timeLine.appendChild(timeLink);
               branchInfo.appendChild(timeLine);
             }
 
