@@ -234,10 +234,14 @@
       function drawDeployments(deployments) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        const padding = 60;
+        const padding = 40;
         const availableWidth = canvas.width - padding * 2;
         const availableHeight = canvas.height - padding * 2;
-        const envHeight = availableHeight / config.environments.length;
+        
+        // Calculate box dimensions
+        const boxWidth = availableWidth / config.environments.length;
+        const boxHeight = availableHeight - 40; // Leave space for title
+        const boxSpacing = 20;
 
         // Draw title
         ctx.font = "20px 'Gloria Hallelujah'";
@@ -246,84 +250,80 @@
         ctx.fillText(
           "Deployment Status (XKCD Style)",
           canvas.width / 2,
-          padding - 20
+          padding
         );
 
-        // Draw environment labels and bars
-        config.environments.forEach((env, index) => {
-          const y = padding + index * envHeight;
+        // Draw environment boxes
+        config.environments.forEach((env, envIndex) => {
+          const x = padding + envIndex * (boxWidth);
+          const y = padding + 30; // Start below title
+
+          // Draw environment box with rough effect
+          roughCanvas.rectangle(
+            x,
+            y,
+            boxWidth - boxSpacing,
+            boxHeight,
+            {
+              stroke: "#333",
+              strokeWidth: 2,
+              roughness: 2,
+              bowing: 2,
+              fill: "#f5f5f5",
+              fillStyle: "solid"
+            }
+          );
 
           // Draw environment label
           ctx.font = "16px 'Gloria Hallelujah'";
           ctx.fillStyle = "#333";
-          ctx.textAlign = "right";
-          ctx.fillText(env, padding - 15, y + envHeight / 2);
+          ctx.textAlign = "center";
+          ctx.fillText(env.toUpperCase(), x + (boxWidth - boxSpacing) / 2, y + 25);
 
-          // Draw bar background (sketchy style)
-          roughCanvas.rectangle(
-            padding,
-            y + 10,
-            availableWidth,
-            envHeight - 20,
-            {
-              fill: "#E0E0E0",
-              fillStyle: "solid",
-              roughness: 2,
-              bowing: 2,
-            }
-          );
+          // Find deployments for this environment
+          const envDeployments = deployments.filter(d => d.environment === env);
 
-          // Find deployment for this environment
-          const deployment = deployments.find((d) => d.environment === env);
-
-          // Draw deployment status
-          if (deployment) {
-            // Draw filled bar with rough effect
+          // Draw repository deployments
+          envDeployments.forEach((deployment, repoIndex) => {
+            const repoY = y + 40 + repoIndex * 60;
+            const innerBoxWidth = boxWidth - boxSpacing - 20;
+            
+            // Draw repository box
             roughCanvas.rectangle(
-              padding,
-              y + 10,
-              availableWidth,
-              envHeight - 20,
+              x + 10,
+              repoY,
+              innerBoxWidth,
+              50,
               {
                 fill: colors[env],
                 fillStyle: "solid",
-                roughness: 2,
-                bowing: 2,
+                roughness: 1.5,
+                bowing: 1
               }
             );
 
-            // Draw deployment details
+            // Draw repository info
             ctx.fillStyle = "#FFF";
             ctx.textAlign = "left";
-            ctx.font = "16px 'Gloria Hallelujah'";
-            const deploymentText = `${deployment.ref || "Unknown"} (${new Date(
-              deployment.created_at
-            ).toLocaleDateString()})`;
-
-            // Add a slight random offset to text for hand-drawn effect
+            ctx.font = "14px 'Gloria Hallelujah'";
+            
+            // Repository name
+            ctx.fillText(
+              deployment.repository.repo,
+              x + 20,
+              repoY + 20
+            );
+            
+            // Branch name with slight random offset for hand-drawn effect
             const offsetX = Math.random() * 2 - 1;
             const offsetY = Math.random() * 2 - 1;
             ctx.fillText(
-              deploymentText,
-              padding + 15 + offsetX,
-              y + envHeight / 2 + 5 + offsetY
+              `↳ ${deployment.ref || "Unknown"}`,
+              x + 20 + offsetX,
+              repoY + 40 + offsetY
             );
-          }
+          });
         });
-
-        // Draw border around the entire visualization
-        roughCanvas.rectangle(
-          padding - 10,
-          padding - 10,
-          availableWidth + 20,
-          availableHeight + 20,
-          {
-            stroke: "#333",
-            strokeWidth: 2,
-            roughness: 2,
-            bowing: 2,
-          }
-        );
       }
 
       // Initial load
