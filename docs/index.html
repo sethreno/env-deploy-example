@@ -72,6 +72,25 @@
       .deployment-card .branch-name {
         font-size: 12px;
         opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .deployment-card .branch-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+      }
+      .deployment-card .sha {
+        color: #666;
+        font-family: monospace;
+        margin-left: 16px;
+      }
+      .deployment-card .time {
+        font-size: 11px;
+        color: #666;
+        margin-left: 16px;
       }
       .error-message {
         color: #d32f2f;
@@ -525,13 +544,44 @@
             repoName.className = "repo-name";
             repoName.textContent =
               deployment.repository.displayName || deployment.repository.repo;
+            const branchInfo = document.createElement("div");
+            branchInfo.className = "branch-info";
 
+            // Branch name line with arrow
             const branchName = document.createElement("div");
             branchName.className = "branch-name";
             branchName.textContent = `↳ ${deployment.ref || "Unknown"}`;
+            branchInfo.appendChild(branchName);
+
+            // SHA line
+            if (deployment.sha) {
+              const shaLine = document.createElement("div");
+              shaLine.className = "sha";
+              shaLine.textContent = deployment.sha.substring(0, 7);
+              branchInfo.appendChild(shaLine);
+            }
+
+            // Time line
+            if (deployment.created_at) {
+              const timeLine = document.createElement("div");
+              timeLine.className = "time";
+              const date = new Date(deployment.created_at);
+              timeLine.textContent = date
+                .toLocaleString("sv", {
+                  // sv locale gives us yyyy-MM-dd HH:mm format
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })
+                .replace(" ", " ");
+              branchInfo.appendChild(timeLine);
+            }
 
             card.appendChild(repoName);
-            card.appendChild(branchName);
+            card.appendChild(branchInfo);
             column.appendChild(card);
           });
 
