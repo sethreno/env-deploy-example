@@ -4,20 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Environment Deployment Status</title>
-    <script src="https://unpkg.com/roughjs@4.5.2/bundled/rough.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap"
-      rel="stylesheet"
-    />
     <style>
       body {
-        font-family: "Gloria Hallelujah", cursive;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji",
+          "Segoe UI Emoji", "Segoe UI Symbol";
         margin: 0;
         padding: 20px;
         background-color: #f0f0f0;
       }
       .container {
-        max-width: 800px;
+        max-width: 1200px;
         margin: 0 auto;
       }
       h1 {
@@ -25,10 +22,43 @@
         text-align: center;
         margin-bottom: 30px;
       }
-      #deploymentCanvas {
+      .deployment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 20px;
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-top: 20px;
+      }
+      .environment-column {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      .environment-title {
+        font-size: 16px;
+        font-weight: bold;
+        text-align: center;
+        padding: 10px;
+        background: #f5f5f5;
+        border: 2px solid #333;
+        border-radius: 4px;
+      }
+      .deployment-card {
+        padding: 15px;
+        border: 2px solid #333;
+        border-radius: 4px;
+        color: white;
+      }
+      .deployment-card .repo-name {
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+      .deployment-card .branch-name {
+        font-size: 12px;
+        opacity: 0.9;
       }
       .error-message {
         color: #d32f2f;
@@ -49,7 +79,6 @@
         padding: 8px;
         border: 2px solid #333;
         border-radius: 4px;
-        font-family: "Gloria Hallelujah", cursive;
         font-size: 14px;
       }
       .token-input button {
@@ -59,7 +88,6 @@
         border: 2px solid #333;
         border-radius: 4px;
         cursor: pointer;
-        font-family: "Gloria Hallelujah", cursive;
         transition: transform 0.1s;
       }
       .token-input button:hover {
@@ -90,28 +118,16 @@
         <button id="saveToken">Save Token</button>
       </div>
       <div id="authStatus" class="auth-status"></div>
-      <canvas id="deploymentCanvas"></canvas>
+      <div id="deploymentGrid" class="deployment-grid"></div>
       <div id="errorMessage" class="error-message"></div>
     </div>
 
     <script>
-      const canvas = document.getElementById("deploymentCanvas");
-      const ctx = canvas.getContext("2d");
+      const deploymentGrid = document.getElementById("deploymentGrid");
       const errorMessage = document.getElementById("errorMessage");
       const tokenInput = document.getElementById("tokenInput");
       const saveTokenButton = document.getElementById("saveToken");
       const authStatus = document.getElementById("authStatus");
-      const roughCanvas = rough.canvas(canvas);
-
-      // Set canvas size
-      function setCanvasSize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = Math.min(400, window.innerHeight - 100);
-      }
-      setCanvasSize();
-      window.addEventListener("resize", setCanvasSize);
-
-      // Configuration
       const config = {
         repositories: [
           {
@@ -121,7 +137,7 @@
           {
             owner: "sethreno",
             repo: "env-deploy-private",
-          }
+          },
           // Add more repositories as needed
         ],
         environments: ["dev", "test", "impl", "prod"],
@@ -189,9 +205,14 @@
           }
 
           const deployments = await response.json();
-          return deployments.length > 0 ? { ...deployments[0], repository } : null;
+          return deployments.length > 0
+            ? { ...deployments[0], repository }
+            : null;
         } catch (error) {
-          console.error(`Error fetching ${environment} deployment for ${repository.repo}:`, error);
+          console.error(
+            `Error fetching ${environment} deployment for ${repository.repo}:`,
+            error
+          );
           return null;
         }
       }
@@ -206,20 +227,21 @@
         }
 
         try {
-          const allDeploymentPromises = config.repositories.flatMap(repository =>
-            config.environments.map(env =>
-              fetchEnvironmentDeployment(repository, env)
-            )
+          const allDeploymentPromises = config.repositories.flatMap(
+            (repository) =>
+              config.environments.map((env) =>
+                fetchEnvironmentDeployment(repository, env)
+              )
           );
 
           const deployments = await Promise.all(allDeploymentPromises);
 
           // Filter out null results and format the data
           const validDeployments = deployments
-            .filter(d => d !== null)
-            .map(deployment => ({
+            .filter((d) => d !== null)
+            .map((deployment) => ({
               ...deployment,
-              displayName: `${deployment.repository.owner}/${deployment.repository.repo}`
+              displayName: `${deployment.repository.owner}/${deployment.repository.repo}`,
             }));
 
           errorMessage.style.display = "none";
@@ -230,99 +252,43 @@
           return [];
         }
       }
-
       function drawDeployments(deployments) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        deploymentGrid.innerHTML = ""; // Clear existing content
 
-        const padding = 40;
-        const availableWidth = canvas.width - padding * 2;
-        const availableHeight = canvas.height - padding * 2;
-        
-        // Calculate box dimensions
-        const boxWidth = availableWidth / config.environments.length;
-        const boxHeight = availableHeight - 40; // Leave space for title
-        const boxSpacing = 20;
+        // Create columns for each environment
+        config.environments.forEach((env) => {
+          const column = document.createElement("div");
+          column.className = "environment-column";
 
-        // Draw title
-        ctx.font = "20px 'Gloria Hallelujah'";
-        ctx.fillStyle = "#333";
-        ctx.textAlign = "center";
-        ctx.fillText(
-          "Deployment Status (XKCD Style)",
-          canvas.width / 2,
-          padding
-        );
+          // Add environment title
+          const title = document.createElement("div");
+          title.className = "environment-title";
+          title.textContent = env.toUpperCase();
+          column.appendChild(title);
 
-        // Draw environment boxes
-        config.environments.forEach((env, envIndex) => {
-          const x = padding + envIndex * (boxWidth);
-          const y = padding + 30; // Start below title
-
-          // Draw environment box with rough effect
-          roughCanvas.rectangle(
-            x,
-            y,
-            boxWidth - boxSpacing,
-            boxHeight,
-            {
-              stroke: "#333",
-              strokeWidth: 2,
-              roughness: 2,
-              bowing: 2,
-              fill: "#f5f5f5",
-              fillStyle: "solid"
-            }
+          // Find and add deployments for this environment
+          const envDeployments = deployments.filter(
+            (d) => d.environment === env
           );
+          envDeployments.forEach((deployment) => {
+            const card = document.createElement("div");
+            card.className = "deployment-card";
+            card.style.backgroundColor = colors[env];
 
-          // Draw environment label
-          ctx.font = "16px 'Gloria Hallelujah'";
-          ctx.fillStyle = "#333";
-          ctx.textAlign = "center";
-          ctx.fillText(env.toUpperCase(), x + (boxWidth - boxSpacing) / 2, y + 25);
+            const repoName = document.createElement("div");
+            repoName.className = "repo-name";
+            repoName.textContent = deployment.repository.repo;
 
-          // Find deployments for this environment
-          const envDeployments = deployments.filter(d => d.environment === env);
+            const branchName = document.createElement("div");
+            branchName.className = "branch-name";
+            branchName.textContent = `↳ ${deployment.ref || "Unknown"}`;
 
-          // Draw repository deployments
-          envDeployments.forEach((deployment, repoIndex) => {
-            const repoY = y + 40 + repoIndex * 60;
-            const innerBoxWidth = boxWidth - boxSpacing - 20;
-            
-            // Draw repository box
-            roughCanvas.rectangle(
-              x + 10,
-              repoY,
-              innerBoxWidth,
-              50,
-              {
-                fill: colors[env],
-                fillStyle: "solid",
-                roughness: 1.5,
-                bowing: 1
-              }
-            );
-
-            // Draw repository info
-            ctx.fillStyle = "#FFF";
-            ctx.textAlign = "left";
-            ctx.font = "14px 'Gloria Hallelujah'";
-            
-            // Repository name
-            ctx.fillText(
-              deployment.repository.repo,
-              x + 20,
-              repoY + 20
-            );
-            
-            // Branch name with slight random offset for hand-drawn effect
-            const offsetX = Math.random() * 2 - 1;
-            const offsetY = Math.random() * 2 - 1;
-            ctx.fillText(
-              `↳ ${deployment.ref || "Unknown"}`,
-              x + 20 + offsetX,
-              repoY + 40 + offsetY
-            );
+            card.appendChild(repoName);
+            card.appendChild(branchName);
+            column.appendChild(card);
           });
+
+          deploymentGrid.appendChild(column);
         });
       }
 
