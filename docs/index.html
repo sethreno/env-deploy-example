@@ -36,6 +36,9 @@
         display: flex;
         flex-direction: column;
         gap: 15px;
+        padding: 15px;
+        border: 2px solid #333;
+        border-radius: 4px;
       }
       .environment-title {
         font-size: 16px;
@@ -65,7 +68,8 @@
         text-align: center;
         display: none;
         margin-top: 20px;
-      }      .token-input {
+      }
+      .token-input {
         width: 100%;
         display: flex;
         gap: 10px;
@@ -96,7 +100,8 @@
       }
       .auth-status.authenticated {
         color: #4caf50;
-      }      .auth-status.unauthenticated {
+      }
+      .auth-status.unauthenticated {
         color: #f44336;
       }
       .config-section {
@@ -179,7 +184,7 @@
       <h1>Environment Deployment Status</h1>
       <div class="config-section">
         <button id="configToggle" class="config-toggle">
-          Configuration Settings 
+          Configuration Settings
           <span class="toggle-icon">▼</span>
         </button>
         <div id="configContent" class="config-content">
@@ -193,10 +198,12 @@
             <button id="saveToken">Save Token</button>
           </div>
           <div id="authStatus" class="auth-status"></div>
-
           <h3>Environments</h3>
           <ul id="envList" class="config-list"></ul>
           <button id="addEnv" class="add-button">Add Environment</button>
+
+          <h3>Environment Colors</h3>
+          <ul id="colorList" class="config-list"></ul>
 
           <h3>Repositories</h3>
           <ul id="repoList" class="config-list"></ul>
@@ -207,7 +214,8 @@
       <div id="errorMessage" class="error-message"></div>
     </div>
 
-    <script>      const deploymentGrid = document.getElementById("deploymentGrid");
+    <script>
+      const deploymentGrid = document.getElementById("deploymentGrid");
       const errorMessage = document.getElementById("errorMessage");
       const tokenInput = document.getElementById("tokenInput");
       const saveTokenButton = document.getElementById("saveToken");
@@ -223,94 +231,126 @@
       let config = {
         repositories: [
           { owner: "sethreno", repo: "env-deploy-example" },
-          { owner: "sethreno", repo: "env-deploy-private" }
+          { owner: "sethreno", repo: "env-deploy-private" },
         ],
-        environments: ["dev", "test", "impl", "prod"]
+        environments: ["dev", "test", "impl", "prod"],
+        colors: {
+          dev: "#2196F3",
+          test: "#FF9800",
+          impl: "#9C27B0",
+          prod: "#4CAF50",
+        },
       };
 
       function loadConfig() {
-        const savedConfig = localStorage.getItem('deployment-config');
+        const savedConfig = localStorage.getItem("deployment-config");
         if (savedConfig) {
           config = JSON.parse(savedConfig);
+          // Ensure colors exist for any new environments
+          config.environments.forEach((env) => {
+            if (!config.colors[env]) {
+              config.colors[env] = "#808080"; // Default gray color
+            }
+          });
         }
       }
 
       function saveConfig() {
-        localStorage.setItem('deployment-config', JSON.stringify(config));
+        localStorage.setItem("deployment-config", JSON.stringify(config));
         init(); // Refresh the deployment view
       }
 
       // Config UI Management
-      configToggle.addEventListener('click', () => {
-        configContent.classList.toggle('visible');
-        configToggle.querySelector('.toggle-icon').textContent = 
-          configContent.classList.contains('visible') ? '▼' : '▶';
+      configToggle.addEventListener("click", () => {
+        configContent.classList.toggle("visible");
+        configToggle.querySelector(".toggle-icon").textContent =
+          configContent.classList.contains("visible") ? "▼" : "▶";
       });
 
       function renderConfigLists() {
         // Render repositories
-        repoList.innerHTML = '';
+        repoList.innerHTML = "";
         config.repositories.forEach((repo, index) => {
-          const li = document.createElement('li');
-          li.className = 'config-item';
+          const li = document.createElement("li");
+          li.className = "config-item";
           li.innerHTML = `
             <input type="text" placeholder="Owner" value="${repo.owner}" data-field="owner">
             <input type="text" placeholder="Repository" value="${repo.repo}" data-field="repo">
             <button class="remove">✕</button>
           `;
-          
+
           // Handle input changes
-          li.querySelectorAll('input').forEach(input => {
-            input.addEventListener('change', () => {
+          li.querySelectorAll("input").forEach((input) => {
+            input.addEventListener("change", () => {
               config.repositories[index][input.dataset.field] = input.value;
               saveConfig();
             });
           });
-          
+
           // Handle remove button
-          li.querySelector('.remove').addEventListener('click', () => {
+          li.querySelector(".remove").addEventListener("click", () => {
             config.repositories.splice(index, 1);
             saveConfig();
             renderConfigLists();
           });
-          
+
           repoList.appendChild(li);
         });
 
-        // Render environments
-        envList.innerHTML = '';
+        // Render environments and their colors
+        envList.innerHTML = "";
         config.environments.forEach((env, index) => {
-          const li = document.createElement('li');
-          li.className = 'config-item';
+          const li = document.createElement("li");
+          li.className = "config-item";
           li.innerHTML = `
             <input type="text" placeholder="Environment" value="${env}">
+            <input type="color" value="${
+              config.colors[env] || "#808080"
+            }" title="Environment color">
             <button class="remove">✕</button>
           `;
-          
-          // Handle input changes
-          li.querySelector('input').addEventListener('change', (e) => {
-            config.environments[index] = e.target.value;
-            saveConfig();
-          });
-          
+
+          // Handle name change
+          li.querySelector('input[type="text"]').addEventListener(
+            "change",
+            (e) => {
+              const oldEnv = config.environments[index];
+              const newEnv = e.target.value;
+              config.environments[index] = newEnv;
+              config.colors[newEnv] = config.colors[oldEnv];
+              delete config.colors[oldEnv];
+              saveConfig();
+            }
+          );
+
+          // Handle color change
+          li.querySelector('input[type="color"]').addEventListener(
+            "change",
+            (e) => {
+              config.colors[env] = e.target.value;
+              saveConfig();
+            }
+          );
+
           // Handle remove button
-          li.querySelector('.remove').addEventListener('click', () => {
+          li.querySelector(".remove").addEventListener("click", () => {
             config.environments.splice(index, 1);
+            delete config.colors[env];
             saveConfig();
             renderConfigLists();
           });
-          
+
           envList.appendChild(li);
         });
       }
 
-      addRepoButton.addEventListener('click', () => {
-        config.repositories.push({ owner: '', repo: '' });
+      addRepoButton.addEventListener("click", () => {
+        config.repositories.push({ owner: "", repo: "" });
         renderConfigLists();
       });
 
-      addEnvButton.addEventListener('click', () => {
-        config.environments.push('');
+      addEnvButton.addEventListener("click", () => {
+        config.environments.push("");
         renderConfigLists();
       });
 
@@ -448,7 +488,7 @@
           envDeployments.forEach((deployment) => {
             const card = document.createElement("div");
             card.className = "deployment-card";
-            card.style.backgroundColor = colors[env];
+            card.style.backgroundColor = config.colors[env];
 
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
