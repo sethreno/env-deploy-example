@@ -106,6 +106,34 @@
         font-size: 11px;
         color: #666;
         margin-left: 16px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .deployment-card .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+      }
+      .deployment-card .status-indicator.success {
+        background-color: #4caf50;
+      }
+      .deployment-card .status-indicator.failure,
+      .deployment-card .status-indicator.error {
+        background-color: #f44336;
+      }
+      .deployment-card .status-indicator.pending {
+        background-color: #ffa726;
+      }
+      .deployment-card .status-indicator.in_progress {
+        background-color: #2196f3;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
       }
       .error-message {
         color: #d32f2f;
@@ -453,26 +481,68 @@
           ...(token && { Authorization: `Bearer ${token}` }),
         };
 
-        const response = await fetch(
+        // Fetch deployments
+        const deploymentResponse = await fetch(
           `https://api.github.com/repos/${repository.owner}/${repository.repo}/deployments?environment=${environment}`,
           { headers }
         );
 
-        if (response.status === 401) {
+        if (deploymentResponse.status === 401) {
           throw new Error("Authentication failed. Please check your token.");
         }
 
-        if (!response.ok) {
+        if (!deploymentResponse.ok) {
           throw new Error(
             `Failed to fetch deployment data for ${repository.repo}/${environment}`
           );
         }
 
-        const deployments = await response.json();
-        return deployments.length > 0
-          ? { ...deployments[0], repository }
-          : null;
+        const deployments = await deploymentResponse.json();
+        
+        if (deployments.length === 0) {
+          return null;
+        }
+
+        const deployment = deployments[0];
+
+        // Fetch the status for this deployment
+        const statusResponse = await fetch(
+          `https://api.github.com/repos/${repository.owner}/${repository.repo}/deployments/${deployment.id}/statuses`,
+          { headers }
+        );
+
+        if (!statusResponse.ok) {
+          console.warn(`Failed to fetch status for deployment ${deployment.id}`);
+        }
+
+        const statuses = await statusResponse.json();
+        const latestStatus = statuses.length > 0 ? statuses[0] : null;
+
+        // Extract run_id from workflow_url if available
+        let run_id = null;
+        if (deployment.payload && deployment.payload.workflow_run) {
+          run_id = deployment.payload.workflow_run;
+        } else if (latestStatus && latestStatus.target_url) {
+          // Try to extract run_id from the target_url
+          const match = latestStatus.target_url.match(/\/actions\/runs\/(\d+)/);
+          if (match) {
+            run_id = match[1];
+          }
+        }
+
+        return {
+          ...deployment,
+          status: latestStatus ? {
+            state: latestStatus.state,
+            description: latestStatus.description,
+            target_url: latestStatus.target_url,
+            created_at: latestStatus.created_at
+          } : null,
+          run_id,
+          repository
+        };
       }
+
       async function fetchDeploymentData() {
         const token = getStoredToken();
         const errors = [];
@@ -592,6 +662,15 @@
             if (deployment.created_at) {
               const timeLine = document.createElement("div");
               timeLine.className = "time";
+
+              // Add status indicator
+              if (deployment.status) {
+                const statusDot = document.createElement("div");
+                statusDot.className = `status-indicator ${deployment.status.state}`;
+                statusDot.title = deployment.status.description || deployment.status.state;
+                timeLine.appendChild(statusDot);
+              }
+
               const date = new Date(deployment.created_at);
               const formattedTime = date
                 .toLocaleString("sv", {
@@ -603,10 +682,20 @@
                   hour12: false,
                 })
                 .replace(" ", " ");
+
               const timeLink = document.createElement("a");
-              timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
+              // If we have a run_id, link to the specific workflow run
+              if (deployment.run_id) {
+                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/actions/runs/${deployment.run_id}`;
+              } else {
+                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
+              }
               timeLink.target = "_blank";
               timeLink.textContent = formattedTime;
+              if (deployment.status) {
+                timeLink.title = deployment.status.description || deployment.status.state;
+              }
+              
               timeLine.appendChild(timeLink);
               branchInfo.appendChild(timeLine);
             }
@@ -630,8 +719,8 @@
       updateAuthStatus();
       init();
 
-      // Refresh every 5 minutes
-      setInterval(init, 60 * 1000 * 5);
+      // Refresh every minute
+      setInterval(init, 60 * 1000 * 1);
     </script>
   </body>
 </html>
