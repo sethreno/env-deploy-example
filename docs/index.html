@@ -57,6 +57,14 @@
         background: white;
         color: #333;
       }
+      .deployment-card.release {
+        border-style: dashed;
+        border-color: lightskyblue;
+      }
+      .deployment-card.feature {
+        border-style: dashed;
+        border-color: orange;
+      }
       .deployment-card .repo-name {
         font-size: 14px;
         margin-bottom: 8px;
@@ -242,10 +250,10 @@
         ],
         environments: ["dev", "test", "impl", "prod"],
         colors: {
-          dev: "#2196F3",
-          test: "#FF9800",
-          impl: "#9C27B0",
-          prod: "#4CAF50",
+          dev: "#0ebd51",
+          test: "#0a63b6",
+          impl: "#b55303",
+          prod: "#9d2d1a",
         },
       };
 
@@ -504,6 +512,15 @@
           envDeployments.forEach((deployment) => {
             const card = document.createElement("div");
             card.className = "deployment-card";
+
+            // Check if branch is main or matches version tag pattern
+            const ref = deployment.ref || "";
+            if (ref === "main" || /^v\d+\.\d+\.\d+$/.test(ref)) {
+              card.classList.add("release");
+            } else {
+              card.classList.add("feature");
+            }
+
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
             repoName.textContent =
