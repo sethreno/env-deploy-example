@@ -158,7 +158,7 @@
         try {
           const headers = {
             'Accept': 'application/vnd.github.v3+json',
-            //...(token && { 'Authorization': `Bearer ${token}` })
+            ...(token && { 'Authorization': `Bearer ${token}` })
           };
 
           const response = await fetch(
