@@ -119,11 +119,11 @@
 
       // Token management
       function getStoredToken() {
-        return localStorage.getItem("github_token");
+        return sessionStorage.getItem("github_token");
       }
 
       function saveToken(token) {
-        localStorage.setItem("github_token", token);
+        sessionStorage.setItem("github_token", token);
         updateAuthStatus();
         init(); // Refresh data with new token
       }
