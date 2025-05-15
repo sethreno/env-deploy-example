@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Environment Deployment Status</title>
+    <script src="https://unpkg.com/roughjs@4.5.2/bundled/rough.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap" rel="stylesheet">
     <style>
       body {
-        font-family: Arial, sans-serif;
+        font-family: 'Gloria Hallelujah', cursive;
         margin: 0;
         padding: 20px;
         background-color: #f0f0f0;
@@ -42,20 +44,23 @@
       .token-input input {
         flex: 1;
         padding: 8px;
-        border: 1px solid #ccc;
+        border: 2px solid #333;
         border-radius: 4px;
+        font-family: 'Gloria Hallelujah', cursive;
         font-size: 14px;
       }
       .token-input button {
         padding: 8px 16px;
-        background: #2196f3;
-        color: white;
-        border: none;
+        background: white;
+        color: #333;
+        border: 2px solid #333;
         border-radius: 4px;
         cursor: pointer;
+        font-family: 'Gloria Hallelujah', cursive;
+        transition: transform 0.1s;
       }
       .token-input button:hover {
-        background: #1976d2;
+        transform: scale(1.05);
       }
       .auth-status {
         text-align: center;
@@ -93,6 +98,7 @@
       const tokenInput = document.getElementById("tokenInput");
       const saveTokenButton = document.getElementById("saveToken");
       const authStatus = document.getElementById("authStatus");
+      const roughCanvas = rough.canvas(canvas);
 
       // Set canvas size
       function setCanvasSize() {
@@ -211,42 +217,87 @@
 
       function drawDeployments(deployments) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const padding = 40;
+        
+        const padding = 60;
         const availableWidth = canvas.width - padding * 2;
         const availableHeight = canvas.height - padding * 2;
         const envHeight = availableHeight / config.environments.length;
+
+        // Draw title
+        ctx.font = "20px 'Gloria Hallelujah'";
+        ctx.fillStyle = "#333";
+        ctx.textAlign = "center";
+        ctx.fillText("Deployment Status (XKCD Style)", canvas.width / 2, padding - 20);
 
         // Draw environment labels and bars
         config.environments.forEach((env, index) => {
           const y = padding + index * envHeight;
 
           // Draw environment label
-          ctx.font = "14px Arial";
+          ctx.font = "16px 'Gloria Hallelujah'";
           ctx.fillStyle = "#333";
           ctx.textAlign = "right";
-          ctx.fillText(env, padding - 10, y + envHeight / 2);
+          ctx.fillText(env, padding - 15, y + envHeight / 2);
 
-          // Draw bar background
-          ctx.fillStyle = "#E0E0E0";
-          ctx.fillRect(padding, y + 10, availableWidth, envHeight - 20);
+          // Draw bar background (sketchy style)
+          roughCanvas.rectangle(
+            padding, 
+            y + 10, 
+            availableWidth, 
+            envHeight - 20, 
+            {
+              fill: "#E0E0E0",
+              fillStyle: "solid",
+              roughness: 2,
+              bowing: 2
+            }
+          );
 
           // Find deployment for this environment
           const deployment = deployments.find(d => d.environment === env);
 
           // Draw deployment status
           if (deployment) {
-            ctx.fillStyle = colors[env];
-            ctx.fillRect(padding, y + 10, availableWidth, envHeight - 20);
+            // Draw filled bar with rough effect
+            roughCanvas.rectangle(
+              padding,
+              y + 10,
+              availableWidth,
+              envHeight - 20,
+              {
+                fill: colors[env],
+                fillStyle: "solid",
+                roughness: 2,
+                bowing: 2
+              }
+            );
 
             // Draw deployment details
             ctx.fillStyle = "#FFF";
             ctx.textAlign = "left";
-            ctx.font = "bold 14px Arial";
+            ctx.font = "16px 'Gloria Hallelujah'";
             const deploymentText = `${deployment.ref || 'Unknown'} (${new Date(deployment.created_at).toLocaleDateString()})`;
-            ctx.fillText(deploymentText, padding + 10, y + (envHeight / 2) + 5);
+            
+            // Add a slight random offset to text for hand-drawn effect
+            const offsetX = Math.random() * 2 - 1;
+            const offsetY = Math.random() * 2 - 1;
+            ctx.fillText(deploymentText, padding + 15 + offsetX, y + (envHeight / 2) + 5 + offsetY);
           }
         });
+
+        // Draw border around the entire visualization
+        roughCanvas.rectangle(
+          padding - 10,
+          padding - 10,
+          availableWidth + 20,
+          availableHeight + 20,
+          {
+            stroke: '#333',
+            strokeWidth: 2,
+            roughness: 2,
+            bowing: 2
+          }
+        );
       }
 
       // Initial load
