@@ -1,2 +1,7 @@
 # env-deploy-example
-Demonstrates deployment to multiple environments
+Demonstrates using GitHub environments to track deployments.
+
+Includes a UI that shows the latest branch that's been deployed to each environment.
+https://sethreno.github.io/env-deploy-example/
+
+# 
