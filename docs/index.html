@@ -122,6 +122,60 @@
         border-color: #2196f3;
         animation: pulse 2s infinite;
       }
+      .deployment-card .status-indicator.in_progress {
+        background-color: #2196f3;
+        animation: pulse 2s infinite;
+      }
+
+      .compare-button {
+        background: none;
+        border: none;
+        color: #3790f9;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+        font-size: inherit;
+        display: inline;
+      }
+
+      .compare-button:hover {
+        text-decoration: underline;
+        background: none;
+        border-radius: 0;
+      }
+
+      .compare-menu {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 4px 0;
+        z-index: 100;
+        min-width: 120px;
+      }
+
+      .compare-menu button {
+        display: block;
+        width: 100%;
+        padding: 6px 12px;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+      }
+
+      .compare-menu button:hover {
+        background: #f5f5f5;
+      }
+
+      .compare-menu button.disabled {
+        color: #999;
+        cursor: not-allowed;
+      }
+
       @keyframes pulse {
         0% { opacity: 1; }
         50% { opacity: 0.4; }
@@ -662,39 +716,11 @@
             const branchInfo = document.createElement("div");
             branchInfo.className = "branch-info";
 
-            const branchName = document.createElement("div");
-            branchName.className = "branch-name";
-            branchName.textContent = "ref: ";
-
-            if (deployment.ref) {
-              const branchLink = document.createElement("a");
-              branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
-              branchLink.target = "_blank";
-              branchLink.textContent = deployment.ref;
-              branchName.appendChild(branchLink);
-            } else {
-              branchName.appendChild(document.createTextNode("Unknown"));
-            }
-            branchInfo.appendChild(branchName);
-
-            // SHA line with link
-            if (deployment.sha) {
-              const shaLine = document.createElement("div");
-              shaLine.className = "sha";
-              shaLine.textContent = "sha: ";
-              const shaLink = document.createElement("a");
-              shaLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/commit/${deployment.sha}`;
-              shaLink.target = "_blank";
-              shaLink.textContent = deployment.sha.substring(0, 7);
-              shaLine.appendChild(shaLink);
-              branchInfo.appendChild(shaLine);
-            }
-
             // Time line with workflow run link
             if (deployment.created_at) {
               const timeLine = document.createElement("div");
               timeLine.className = "time";
-              timeLine.textContent = "time: ";
+              timeLine.textContent = "deployed: ";
 
 
               const date = dayjs(deployment.created_at);
@@ -729,8 +755,99 @@
               branchInfo.appendChild(timeLine);
             }
 
+            // Set up branchName element with text and button
+            const branchName = document.createElement("div");
+            branchName.className = "branch-name";
+            branchName.textContent = "ref: ";
+
+
+            // Add ref link if available
+            if (deployment.ref) {
+              const branchLink = document.createElement("a");
+              branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
+              branchLink.target = "_blank";
+              branchLink.textContent = deployment.ref;
+              branchName.appendChild(branchLink);
+            } else {
+              branchName.appendChild(document.createTextNode("Unknown"));
+            }
+            branchInfo.appendChild(branchName);
+
+            // SHA line with link
+            if (deployment.sha) {
+              const shaLine = document.createElement("div");
+              shaLine.className = "sha";
+              shaLine.textContent = "sha: ";
+              const shaLink = document.createElement("a");
+              shaLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/commit/${deployment.sha}`;
+              shaLink.target = "_blank";
+              shaLink.textContent = deployment.sha.substring(0, 7);
+              shaLine.appendChild(shaLink);
+              shaLine.appendChild(document.createTextNode(" ("));
+              
+              // Add compare button
+              const compareButton = document.createElement("button");
+              compareButton.className = "compare-button";
+              compareButton.textContent = "compare";
+              compareButton.title = "Compare with other environments";
+              shaLine.appendChild(compareButton);
+              shaLine.appendChild(document.createTextNode(")"));
+              branchInfo.appendChild(shaLine);
+
+              // Create compare menu (hidden initially)
+              const compareMenu = document.createElement("div");
+              compareMenu.className = "compare-menu";
+              compareMenu.style.display = "none";
+
+              // Add environment options to menu
+              config.environments.forEach(targetEnv => {
+                if (targetEnv === env) return; // Skip current environment
+
+                const targetDeployment = deployments.find(d => 
+                  d.environment === targetEnv && 
+                  d.repository.owner === deployment.repository.owner &&
+                  d.repository.repo === deployment.repository.repo
+                );
+
+                const button = document.createElement("button");
+                if (targetDeployment) {
+                  button.textContent = `${targetEnv.toUpperCase() } (${targetDeployment.sha.substring(0, 7)})`;
+                  button.addEventListener("click", () => {
+                    const compareUrl = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/compare/${targetDeployment.sha}...${deployment.sha}`;
+                    window.open(compareUrl, "_blank");
+                    compareMenu.style.display = "none";
+                  });
+                } else {
+                  button.textContent = `${targetEnv.toUpperCase()} (no deployment)`;
+                  button.className = "disabled";
+                  button.disabled = true;
+                }
+                compareMenu.appendChild(button);
+              });
+
+              // Handle button click
+              compareButton.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const rect = compareButton.getBoundingClientRect();
+                compareMenu.style.position = "absolute";
+                compareMenu.style.left = `${rect.left}px`;
+                compareMenu.style.top = `${rect.bottom + 5}px`;
+                compareMenu.style.display = compareMenu.style.display === "none" ? "block" : "none";
+              });
+
+              // Close menu when clicking outside
+              document.addEventListener("click", () => {
+                compareMenu.style.display = "none";
+              });
+
+              // Add menu to the UI
+              document.body.appendChild(compareMenu);
+            }
+
             card.appendChild(repoName);
             card.appendChild(branchInfo);
+
+
             column.appendChild(card);
           });
 
