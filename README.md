@@ -10,7 +10,7 @@ This repo includes notes and an example workflow that uses [GitHub environments]
 
 ## Lessons Learned
 
-- Limit use of the `environment` attribute to jobs that a deploy.
+- Limit use of the `environment` attribute to jobs that actually deploy.
 
   This might seem obvious, but in the past I've used the `environment`
   attribute to read environment specific configuration for "setup" or "smoke
@@ -32,7 +32,7 @@ A static site that demonstrates the use of [GitHub's
 API](https://docs.github.com/en/rest/deployments/deployments?apiVersion=2022-11-28)
 for building custom dashboards.
 
-It provides improved visibility for projects with components in multiple repositories and can be configured to show deployment status for any repo. Configuration is stored in you're browser's [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
+It provides improved visibility for projects with components in multiple repositories and can be configured to show deployment status for any repo. Configuration is stored in your browser's [localStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage).
 
 View it online: [here](https://sethreno.github.io/env-deploy-example/).
 
