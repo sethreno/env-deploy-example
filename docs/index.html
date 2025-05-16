@@ -821,7 +821,7 @@
                 if (targetDeployment) {
                   button.textContent = `${targetEnv.toUpperCase() } (${targetDeployment.sha.substring(0, 7)})`;
                   button.addEventListener("click", () => {
-                    const compareUrl = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/compare/${targetDeployment.sha}...${deployment.sha}`;
+                    const compareUrl = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/compare/${targetDeployment.sha}..${deployment.sha}`;
                     window.open(compareUrl, "_blank");
                     compareMenu.style.display = "none";
                   });
