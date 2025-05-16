@@ -10,6 +10,11 @@
       href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script src="https://unpkg.com/dayjs@1.11.7/dayjs.min.js"></script>
+    <script src="https://unpkg.com/dayjs@1.11.7/plugin/relativeTime.js"></script>
+    <script>
+      dayjs.extend(window.dayjs_plugin_relativeTime);
+    </script>
     <style>
       body {
         font-family: "JetBrains Mono", monospace;
@@ -692,19 +697,12 @@
               timeLine.textContent = "time: ";
 
 
-              const date = new Date(deployment.created_at);
-              const formattedTime = date
-                .toLocaleString("sv", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })
-                .replace(" ", " ");
+              const date = dayjs(deployment.created_at);
+              const formattedTime = date.format('YYYY-MM-DD HH:mm');
+              const relativeTime = date.fromNow();
 
               const timeLink = document.createElement("a");
+              timeLink.title = formattedTime;
               // If we have a run_id, link to the specific workflow run
               if (deployment.run_id) {
                 timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/actions/runs/${deployment.run_id}`;
@@ -712,9 +710,9 @@
                 timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
               }
               timeLink.target = "_blank";
-              timeLink.textContent = formattedTime;
+              timeLink.textContent = relativeTime;
               if (deployment.status) {
-                timeLink.title = deployment.status.description || deployment.status.state;
+                timeLink.title = `${formattedTime} - ${deployment.status.description || deployment.status.state}`;
               }
               
               timeLine.appendChild(timeLink);
