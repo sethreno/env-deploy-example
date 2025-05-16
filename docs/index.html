@@ -85,6 +85,14 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        width: 100%;
+        min-width: 0;
+      }
+      .deployment-card .branch-name a {
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+        max-width: 100%;
       }
       .deployment-card .branch-info {
         display: flex;
