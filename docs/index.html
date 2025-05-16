@@ -7,14 +7,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
+    <script src="https://unpkg.com/dayjs@1.11.7/dayjs.min.js"></script>
+    <script src="https://unpkg.com/dayjs@1.11.7/plugin/relativeTime.js"></script>
+    <script>
+      dayjs.extend(window.dayjs_plugin_relativeTime);
+    </script>
     <style>
       body {
-        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
-          "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        font-family: "JetBrains Mono", monospace;
         margin: 0;
         padding: 20px;
         background-color: #f0f0f0;
@@ -64,28 +67,20 @@
         border-radius: 4px;
         background: white;
         color: #333;
-      }
-      .deployment-card.release {
+        font-size: 14px;
         border-style: dashed;
-        border-color: darkslategrey;
-      }
-      .deployment-card.feature {
-        border-style: dashed;
-        border-color: darkslategrey;
       }
       .deployment-card .repo-name {
-        font-size: 14px;
-        margin-bottom: 8px;
+        font-size: 16px;
+        display: flex;
       }
       .deployment-card a {
         color: auto;
-        /*text-decoration: none;*/
       }
       .deployment-card a:hover {
         text-decoration: underline;
       }
       .deployment-card .branch-name {
-        font-size: 12px;
         opacity: 0.9;
         display: flex;
         align-items: center;
@@ -95,17 +90,13 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
-        font-size: 12px;
       }
       .deployment-card .sha {
         color: #666;
         font-family: monospace;
-        margin-left: 16px;
       }
       .deployment-card .time {
-        font-size: 11px;
         color: #666;
-        margin-left: 16px;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -115,21 +106,76 @@
         height: 8px;
         border-radius: 50%;
         margin-right: 4px;
+        margin-top: 6px;
       }
-      .deployment-card .status-indicator.success {
-        background-color: #4caf50;
+      .deployment-card.success {
+        border-color: #4caf50;
       }
-      .deployment-card .status-indicator.failure,
-      .deployment-card .status-indicator.error {
-        background-color: #f44336;
+      .deployment-card.failure,
+      .deployment-card.error {
+        border-color: #f44336;
       }
-      .deployment-card .status-indicator.pending {
-        background-color: #ffa726;
+      .deployment-card.pending {
+        border-color: #ffa726;
+      }
+      .deployment-card.in_progress {
+        border-color: #2196f3;
+        animation: pulse 2s infinite;
       }
       .deployment-card .status-indicator.in_progress {
         background-color: #2196f3;
         animation: pulse 2s infinite;
       }
+
+      .compare-button {
+        background: none;
+        border: none;
+        color: #3790f9;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+        font-size: inherit;
+        display: inline;
+      }
+
+      .compare-button:hover {
+        text-decoration: underline;
+        background: none;
+        border-radius: 0;
+      }
+
+      .compare-menu {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 4px 0;
+        z-index: 100;
+        min-width: 120px;
+      }
+
+      .compare-menu button {
+        display: block;
+        width: 100%;
+        padding: 6px 12px;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 12px;
+      }
+
+      .compare-menu button:hover {
+        background: #f5f5f5;
+      }
+
+      .compare-menu button.disabled {
+        color: #999;
+        cursor: not-allowed;
+      }
+
       @keyframes pulse {
         0% { opacity: 1; }
         50% { opacity: 0.4; }
@@ -278,6 +324,19 @@
           <ul id="repoList" class="config-list"></ul>
           <button id="addRepo" class="add-button">Add Repository</button>
 
+          <h3>Settings</h3>
+          <div class="config-item">
+            <label for="refreshInterval">Auto-refresh interval (minutes):</label>
+            <input
+              type="number"
+              id="refreshInterval"
+              min="1"
+              max="60"
+              value="10"
+              style="width: 80px"
+            />
+          </div>
+
           <h3>GitHub Authentication</h3>
           <span>
             If private repositories are configured, enter your GitHub Personal
@@ -309,6 +368,7 @@
       const envList = document.getElementById("envList");
       const addRepoButton = document.getElementById("addRepo");
       const addEnvButton = document.getElementById("addEnv");
+      const refreshIntervalInput = document.getElementById("refreshInterval");
 
       // Configuration Management
       let config = {
@@ -320,6 +380,7 @@
           impl: "#b55303",
           prod: "#9d2d1a",
         },
+        refreshInterval: 10, // minutes
       };
 
       function loadConfig() {
@@ -333,6 +394,7 @@
             }
           });
         }
+        refreshIntervalInput.value = config.refreshInterval;
       }
 
       function saveConfig() {
@@ -440,9 +502,30 @@
         renderConfigLists();
       });
 
+      refreshIntervalInput.addEventListener("change", (e) => {
+        const newInterval = parseInt(e.target.value, 10);
+        if (newInterval >= 1 && newInterval <= 60) {
+          config.refreshInterval = newInterval;
+          saveConfig();
+          setupAutoRefresh(); // Restart the refresh timer with new interval
+        }
+      });
+
+      // Start auto-refresh with current interval
+      let refreshTimer = null;
+      
+      function setupAutoRefresh() {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
+        refreshTimer = setInterval(init, 60 * 1000 * config.refreshInterval);
+      }
+
       // Initialize config
       loadConfig();
       renderConfigLists();
+      refreshIntervalInput.value = config.refreshInterval;
+      setupAutoRefresh();
 
       // Token management
       function getStoredToken() {
@@ -615,26 +698,70 @@
             card.className = "deployment-card";
 
             // Check if branch is main or matches version tag pattern
+            // experiment with highlighting feature vs release deployments
+            /*
             const ref = deployment.ref || "";
             if (ref === "main" || /^v\d+\.\d+\.\d+$/.test(ref)) {
               card.classList.add("release");
             } else {
               card.classList.add("feature");
             }
+            */
 
             // Repository name
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
-            repoName.textContent =
-              deployment.repository.displayName || deployment.repository.repo;
+            repoName.textContent = deployment.repository.displayName || deployment.repository.repo;
 
             const branchInfo = document.createElement("div");
             branchInfo.className = "branch-info";
 
-            // Branch name line with arrow and link
+            // Time line with workflow run link
+            if (deployment.created_at) {
+              const timeLine = document.createElement("div");
+              timeLine.className = "time";
+              timeLine.textContent = "deployed: ";
+
+
+              const date = dayjs(deployment.created_at);
+              const formattedTime = date.format('YYYY-MM-DD HH:mm');
+              const relativeTime = date.fromNow();
+
+              const timeLink = document.createElement("a");
+              timeLink.title = formattedTime;
+              // If we have a run_id, link to the specific workflow run
+              if (deployment.run_id) {
+                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/actions/runs/${deployment.run_id}`;
+              } else {
+                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
+              }
+              timeLink.target = "_blank";
+              timeLink.textContent = relativeTime;
+              if (deployment.status) {
+                timeLink.title = `${formattedTime} - ${deployment.status.description || deployment.status.state}`;
+              }
+              
+              timeLine.appendChild(timeLink);
+
+              // Add status indicator
+              if (deployment.status) {
+                card.classList.add(deployment.status.state);
+                const statusDot = document.createElement("div");
+                statusDot.className = `status-indicator ${deployment.status.state}`;
+                statusDot.title = deployment.status.description || deployment.status.state;
+                //repoName.prepend(statusDot);
+              }
+
+              branchInfo.appendChild(timeLine);
+            }
+
+            // Set up branchName element with text and button
             const branchName = document.createElement("div");
             branchName.className = "branch-name";
-            branchName.textContent = "↳ ";
+            branchName.textContent = "ref: ";
+
+
+            // Add ref link if available
             if (deployment.ref) {
               const branchLink = document.createElement("a");
               branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
@@ -650,58 +777,77 @@
             if (deployment.sha) {
               const shaLine = document.createElement("div");
               shaLine.className = "sha";
+              shaLine.textContent = "sha: ";
               const shaLink = document.createElement("a");
               shaLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/commit/${deployment.sha}`;
               shaLink.target = "_blank";
               shaLink.textContent = deployment.sha.substring(0, 7);
               shaLine.appendChild(shaLink);
-              branchInfo.appendChild(shaLine);
-            }
-
-            // Time line with workflow run link
-            if (deployment.created_at) {
-              const timeLine = document.createElement("div");
-              timeLine.className = "time";
-
-              // Add status indicator
-              if (deployment.status) {
-                const statusDot = document.createElement("div");
-                statusDot.className = `status-indicator ${deployment.status.state}`;
-                statusDot.title = deployment.status.description || deployment.status.state;
-                timeLine.appendChild(statusDot);
-              }
-
-              const date = new Date(deployment.created_at);
-              const formattedTime = date
-                .toLocaleString("sv", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })
-                .replace(" ", " ");
-
-              const timeLink = document.createElement("a");
-              // If we have a run_id, link to the specific workflow run
-              if (deployment.run_id) {
-                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/actions/runs/${deployment.run_id}`;
-              } else {
-                timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
-              }
-              timeLink.target = "_blank";
-              timeLink.textContent = formattedTime;
-              if (deployment.status) {
-                timeLink.title = deployment.status.description || deployment.status.state;
-              }
+              shaLine.appendChild(document.createTextNode(" ("));
               
-              timeLine.appendChild(timeLink);
-              branchInfo.appendChild(timeLine);
+              // Add compare button
+              const compareButton = document.createElement("button");
+              compareButton.className = "compare-button";
+              compareButton.textContent = "compare";
+              compareButton.title = "Compare with other environments";
+              shaLine.appendChild(compareButton);
+              shaLine.appendChild(document.createTextNode(")"));
+              branchInfo.appendChild(shaLine);
+
+              // Create compare menu (hidden initially)
+              const compareMenu = document.createElement("div");
+              compareMenu.className = "compare-menu";
+              compareMenu.style.display = "none";
+
+              // Add environment options to menu
+              config.environments.forEach(targetEnv => {
+                if (targetEnv === env) return; // Skip current environment
+
+                const targetDeployment = deployments.find(d => 
+                  d.environment === targetEnv && 
+                  d.repository.owner === deployment.repository.owner &&
+                  d.repository.repo === deployment.repository.repo
+                );
+
+                const button = document.createElement("button");
+                if (targetDeployment) {
+                  button.textContent = `${targetEnv.toUpperCase() } (${targetDeployment.sha.substring(0, 7)})`;
+                  button.addEventListener("click", () => {
+                    const compareUrl = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/compare/${targetDeployment.sha}...${deployment.sha}`;
+                    window.open(compareUrl, "_blank");
+                    compareMenu.style.display = "none";
+                  });
+                } else {
+                  button.textContent = `${targetEnv.toUpperCase()} (no deployment)`;
+                  button.className = "disabled";
+                  button.disabled = true;
+                }
+                compareMenu.appendChild(button);
+              });
+
+              // Handle button click
+              compareButton.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const rect = compareButton.getBoundingClientRect();
+                compareMenu.style.position = "absolute";
+                compareMenu.style.left = `${rect.left}px`;
+                compareMenu.style.top = `${rect.bottom + 5}px`;
+                compareMenu.style.display = compareMenu.style.display === "none" ? "block" : "none";
+              });
+
+              // Close menu when clicking outside
+              document.addEventListener("click", () => {
+                compareMenu.style.display = "none";
+              });
+
+              // Add menu to the UI
+              document.body.appendChild(compareMenu);
             }
 
             card.appendChild(repoName);
             card.appendChild(branchInfo);
+
+
             column.appendChild(card);
           });
 
@@ -718,9 +864,6 @@
       // Initialize
       updateAuthStatus();
       init();
-
-      // Refresh every minute
-      setInterval(init, 60 * 1000 * 1);
     </script>
   </body>
 </html>
