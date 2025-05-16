@@ -63,17 +63,11 @@
         background: white;
         color: #333;
         font-size: 14px;
-      }
-      .deployment-card.release {
         border-style: dashed;
-        border-color: darkslategrey;
-      }
-      .deployment-card.feature {
-        border-style: dashed;
-        border-color: darkslategrey;
       }
       .deployment-card .repo-name {
-        margin-bottom: 8px;
+        font-size: 16px;
+        display: flex;
       }
       .deployment-card a {
         color: auto;
@@ -95,11 +89,9 @@
       .deployment-card .sha {
         color: #666;
         font-family: monospace;
-        margin-left: 16px;
       }
       .deployment-card .time {
         color: #666;
-        margin-left: 16px;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -109,19 +101,20 @@
         height: 8px;
         border-radius: 50%;
         margin-right: 4px;
+        margin-top: 6px;
       }
-      .deployment-card .status-indicator.success {
-        background-color: #4caf50;
+      .deployment-card.success {
+        border-color: #4caf50;
       }
-      .deployment-card .status-indicator.failure,
-      .deployment-card .status-indicator.error {
-        background-color: #f44336;
+      .deployment-card.failure,
+      .deployment-card.error {
+        border-color: #f44336;
       }
-      .deployment-card .status-indicator.pending {
-        background-color: #ffa726;
+      .deployment-card.pending {
+        border-color: #ffa726;
       }
-      .deployment-card .status-indicator.in_progress {
-        background-color: #2196f3;
+      .deployment-card.in_progress {
+        border-color: #2196f3;
         animation: pulse 2s infinite;
       }
       @keyframes pulse {
@@ -646,26 +639,28 @@
             card.className = "deployment-card";
 
             // Check if branch is main or matches version tag pattern
+            // experiment with highlighting feature vs release deployments
+            /*
             const ref = deployment.ref || "";
             if (ref === "main" || /^v\d+\.\d+\.\d+$/.test(ref)) {
               card.classList.add("release");
             } else {
               card.classList.add("feature");
             }
+            */
 
             // Repository name
             const repoName = document.createElement("div");
             repoName.className = "repo-name";
-            repoName.textContent =
-              deployment.repository.displayName || deployment.repository.repo;
+            repoName.textContent = deployment.repository.displayName || deployment.repository.repo;
 
             const branchInfo = document.createElement("div");
             branchInfo.className = "branch-info";
 
-            // Branch name line with arrow and link
             const branchName = document.createElement("div");
             branchName.className = "branch-name";
-            branchName.textContent = "↳ ";
+            branchName.textContent = "ref: ";
+
             if (deployment.ref) {
               const branchLink = document.createElement("a");
               branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
@@ -681,6 +676,7 @@
             if (deployment.sha) {
               const shaLine = document.createElement("div");
               shaLine.className = "sha";
+              shaLine.textContent = "sha: ";
               const shaLink = document.createElement("a");
               shaLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/commit/${deployment.sha}`;
               shaLink.target = "_blank";
@@ -693,14 +689,8 @@
             if (deployment.created_at) {
               const timeLine = document.createElement("div");
               timeLine.className = "time";
+              timeLine.textContent = "time: ";
 
-              // Add status indicator
-              if (deployment.status) {
-                const statusDot = document.createElement("div");
-                statusDot.className = `status-indicator ${deployment.status.state}`;
-                statusDot.title = deployment.status.description || deployment.status.state;
-                timeLine.appendChild(statusDot);
-              }
 
               const date = new Date(deployment.created_at);
               const formattedTime = date
@@ -728,6 +718,16 @@
               }
               
               timeLine.appendChild(timeLink);
+
+              // Add status indicator
+              if (deployment.status) {
+                card.classList.add(deployment.status.state);
+                const statusDot = document.createElement("div");
+                statusDot.className = `status-indicator ${deployment.status.state}`;
+                statusDot.title = deployment.status.description || deployment.status.state;
+                //repoName.prepend(statusDot);
+              }
+
               branchInfo.appendChild(timeLine);
             }
 
