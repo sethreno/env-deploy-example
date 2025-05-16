@@ -1,0 +1,340 @@
+body {
+  font-family: "JetBrains Mono", monospace;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f0f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #333;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.deployment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.environment-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px;
+  border: 2px solid;
+  border-radius: 4px;
+  background: white;
+}
+
+.environment-title {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  padding: 10px;
+  color: white;
+  border: 2px solid;
+  border-radius: 4px;
+}
+
+.deployment-card {
+  padding: 15px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  border-style: dashed;
+}
+
+.deployment-card .repo-name {
+  font-size: 16px;
+  display: flex;
+}
+
+.deployment-card a {
+  color: auto;
+}
+
+.deployment-card a:hover {
+  text-decoration: underline;
+}
+
+.deployment-card .branch-name {
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.deployment-card .branch-name a {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.deployment-card .branch-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deployment-card .sha {
+  color: #666;
+  font-family: monospace;
+}
+
+.deployment-card .time {
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deployment-card .status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  margin-top: 6px;
+}
+
+.deployment-card.success {
+  border-color: #4caf50;
+}
+
+.deployment-card.failure,
+.deployment-card.error {
+  border-color: #f44336;
+}
+
+.deployment-card.pending {
+  border-color: #ffa726;
+}
+
+.deployment-card.in_progress {
+  border-color: #2196f3;
+  animation: pulse 2s infinite;
+}
+
+.deployment-card .status-indicator.in_progress {
+  background-color: #2196f3;
+  animation: pulse 2s infinite;
+}
+
+.compare-button {
+  background: none;
+  border: none;
+  color: #3790f9;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  display: inline;
+}
+
+.compare-button:hover {
+  text-decoration: underline;
+  background: none;
+  border-radius: 0;
+}
+
+.compare-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 4px 0;
+  z-index: 100;
+  min-width: 120px;
+}
+
+.compare-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.compare-menu button:hover {
+  background: #f5f5f5;
+}
+
+.compare-menu button.disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.error-message {
+  color: #d32f2f;
+  text-align: left;
+  display: none;
+  margin-top: 20px;
+  padding: 12px;
+  background-color: rgba(211, 47, 47, 0.1);
+  border-radius: 4px;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+.token-input {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.token-input input {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.token-input button {
+  padding: 8px 16px;
+  background: white;
+  color: #333;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.token-input button:hover {
+  background: #f5f5f5;
+}
+
+.auth-status {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.auth-status.authenticated {
+  color: #4caf50;
+}
+
+.auth-status.unauthenticated {
+  color: #f44336;
+}
+
+.config-section {
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.config-toggle {
+  width: 100%;
+  padding: 10px;
+  background: #f5f5f5;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.config-toggle:hover {
+  background: #e0e0e0;
+}
+
+.config-content {
+  display: none;
+  padding: 20px;
+  border: 2px solid #333;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+}
+
+.config-content.visible {
+  display: block;
+}
+
+.config-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.config-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.config-item input {
+  padding: 8px;
+  border: 2px solid #333;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.config-item input[type="text"] {
+  flex: 1;
+}
+
+.config-item input[data-field="displayName"] {
+  flex: 2;
+}
+
+.config-item button {
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.config-item button.remove {
+  color: #f44336;
+}
+
+.config-item button:hover {
+  background: #f5f5f5;
+}
+
+.add-button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.add-button:hover {
+  background: #f5f5f5;
+}
