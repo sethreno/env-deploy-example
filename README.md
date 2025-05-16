@@ -19,12 +19,22 @@ This repo includes notes and an example workflow that uses [GitHub environments]
 
   This caused noise and confusion in the deployment history. For example a workflow run where the `setup` job succeeded but the `deploy` job failed still appears as a successful deployment.
 
+  Sadly this means environment specific variables and secrets can't be used for setup. There's an [open discussion](https://github.com/orgs/community/discussions/36919) about adding this capability but for now the best known workaround is to create repo level variables and secrets with environment suffixes. For example `UBUNTU_VERSION_DEV`, `UBUNTU_VERSION_TEST`.
+
+  See [deploy.yaml](https://github.com/sethreno/env-deploy-example/blob/main/.github/workflows/deploy.yaml#L33) for an example that uses this approach.
+
 - Deploy the ref selected in the built-in ref picker.
 
   Okay, maybe another obvious one... I've made the mistake of building more complex workflows that used the ref picker to select the version of the workflow to run but allowing an additional input to select the version or tag to actually deploy.
 
   Again this caused confusion on the deployment history and made it very
   difficult to tell what version of the code was actually deployed.
+
+- Dummy environments can be used to pause workflows
+
+  I've seen worklows and reusable actions that use a polling loop to "pause" a workflow. The downside of this is that it uses build minutes and occupies runner capacity.
+
+  Workflows that are paused waiting for deployment review do not have this issue.
 
 ## Deployment Dashboard
 
