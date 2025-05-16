@@ -272,6 +272,19 @@
           <ul id="repoList" class="config-list"></ul>
           <button id="addRepo" class="add-button">Add Repository</button>
 
+          <h3>Settings</h3>
+          <div class="config-item">
+            <label for="refreshInterval">Auto-refresh interval (minutes):</label>
+            <input
+              type="number"
+              id="refreshInterval"
+              min="1"
+              max="60"
+              value="10"
+              style="width: 80px"
+            />
+          </div>
+
           <h3>GitHub Authentication</h3>
           <span>
             If private repositories are configured, enter your GitHub Personal
@@ -303,6 +316,7 @@
       const envList = document.getElementById("envList");
       const addRepoButton = document.getElementById("addRepo");
       const addEnvButton = document.getElementById("addEnv");
+      const refreshIntervalInput = document.getElementById("refreshInterval");
 
       // Configuration Management
       let config = {
@@ -314,6 +328,7 @@
           impl: "#b55303",
           prod: "#9d2d1a",
         },
+        refreshInterval: 10, // minutes
       };
 
       function loadConfig() {
@@ -327,6 +342,7 @@
             }
           });
         }
+        refreshIntervalInput.value = config.refreshInterval;
       }
 
       function saveConfig() {
@@ -434,9 +450,30 @@
         renderConfigLists();
       });
 
+      refreshIntervalInput.addEventListener("change", (e) => {
+        const newInterval = parseInt(e.target.value, 10);
+        if (newInterval >= 1 && newInterval <= 60) {
+          config.refreshInterval = newInterval;
+          saveConfig();
+          setupAutoRefresh(); // Restart the refresh timer with new interval
+        }
+      });
+
+      // Start auto-refresh with current interval
+      let refreshTimer = null;
+      
+      function setupAutoRefresh() {
+        if (refreshTimer) {
+          clearInterval(refreshTimer);
+        }
+        refreshTimer = setInterval(init, 60 * 1000 * config.refreshInterval);
+      }
+
       // Initialize config
       loadConfig();
       renderConfigLists();
+      refreshIntervalInput.value = config.refreshInterval;
+      setupAutoRefresh();
 
       // Token management
       function getStoredToken() {
@@ -712,9 +749,6 @@
       // Initialize
       updateAuthStatus();
       init();
-
-      // Refresh every minute
-      setInterval(init, 60 * 1000 * 1);
     </script>
   </body>
 </html>
