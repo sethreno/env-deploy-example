@@ -10,7 +10,7 @@ This repo includes notes and an example workflow that uses [GitHub environments]
 
 ## Lessons Learned
 
-- Limit use of the `environment` attribute to jobs that a deploy.
+- Limit use of the `environment` attribute to jobs that actually deploy.
 
   This might seem obvious, but in the past I've used the `environment`
   attribute to read environment specific configuration for "setup" or "smoke
