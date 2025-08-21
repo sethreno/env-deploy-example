@@ -27,6 +27,29 @@ class App {
           config.environments
         );
 
+      // Enrich deployments with tag information
+      const enrichedDeployments = await Promise.all(
+        deployments.map(async (deployment) => {
+          if (deployment.sha) {
+            try {
+              const tagName = await this.githubService.fetchTagForSha(
+                deployment.repository,
+                deployment.sha
+              );
+              if (tagName) {
+                return { ...deployment, tag: tagName };
+              }
+            } catch (error) {
+              console.warn(
+                `Failed to fetch tag for deployment ${deployment.id}:`,
+                error
+              );
+            }
+          }
+          return deployment;
+        })
+      );
+
       if (errors.length > 0) {
         this.uiManager.showError(
           `Warning: Some deployments failed to load. Configure GitHub Authentication to increase rate limit or access private repos. \n${errors.join(
@@ -37,7 +60,7 @@ class App {
         this.uiManager.hideError();
       }
 
-      this.uiManager.drawDeployments(deployments);
+      this.uiManager.drawDeployments(enrichedDeployments);
     } catch (error) {
       this.uiManager.showError(error.message);
     }

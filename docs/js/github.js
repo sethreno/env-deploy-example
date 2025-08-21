@@ -28,7 +28,7 @@ export class GitHubService {
       }
 
       const deployments = await deploymentResponse.json();
-      
+
       if (deployments.length === 0) {
         return null;
       }
@@ -62,35 +62,69 @@ export class GitHubService {
 
       return {
         ...deployment,
-        status: latestStatus ? {
-          state: latestStatus.state,
-          description: latestStatus.description,
-          target_url: latestStatus.target_url,
-          created_at: latestStatus.created_at
-        } : null,
+        status: latestStatus
+          ? {
+              state: latestStatus.state,
+              description: latestStatus.description,
+              target_url: latestStatus.target_url,
+              created_at: latestStatus.created_at,
+            }
+          : null,
         run_id,
-        repository
+        repository,
       };
     } catch (error) {
-      console.error('Error fetching deployment:', error);
+      console.error("Error fetching deployment:", error);
       throw error;
+    }
+  }
+
+  async fetchTagForSha(repository, sha) {
+    const token = this.authManager.getStoredToken();
+    const headers = {
+      Accept: "application/vnd.github.v3+json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    };
+
+    try {
+      // Fetch tags for the repository
+      const tagsResponse = await fetch(
+        `https://api.github.com/repos/${repository.owner}/${repository.repo}/tags`,
+        { headers }
+      );
+
+      if (!tagsResponse.ok) {
+        console.warn(
+          `Failed to fetch tags for ${repository.owner}/${repository.repo}`
+        );
+        return null;
+      }
+
+      const tags = await tagsResponse.json();
+
+      // Find a tag that matches the given SHA
+      const matchingTag = tags.find((tag) => tag.commit.sha === sha);
+
+      return matchingTag ? matchingTag.name : null;
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      return null;
     }
   }
 
   async fetchAllDeployments(repositories, environments) {
     const errors = [];
-    const allDeploymentPromises = repositories.flatMap(
-      (repository) =>
-        environments.map(async (env) => {
-          try {
-            return await this.fetchEnvironmentDeployment(repository, env);
-          } catch (error) {
-            errors.push(
-              `Failed to fetch ${repository.repo}/${env}: ${error.message}`
-            );
-            return null;
-          }
-        })
+    const allDeploymentPromises = repositories.flatMap((repository) =>
+      environments.map(async (env) => {
+        try {
+          return await this.fetchEnvironmentDeployment(repository, env);
+        } catch (error) {
+          errors.push(
+            `Failed to fetch ${repository.repo}/${env}: ${error.message}`
+          );
+          return null;
+        }
+      })
     );
 
     const deployments = await Promise.all(allDeploymentPromises);
@@ -105,7 +139,7 @@ export class GitHubService {
 
     return {
       deployments: validDeployments,
-      errors
+      errors,
     };
   }
 }

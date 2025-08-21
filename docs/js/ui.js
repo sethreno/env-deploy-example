@@ -24,11 +24,17 @@ export class UIManager {
   }
 
   bindEventListeners() {
-    this.elements.configToggle.addEventListener("click", () => this.toggleConfig());
+    this.elements.configToggle.addEventListener("click", () =>
+      this.toggleConfig()
+    );
     this.elements.addRepoButton.addEventListener("click", () => this.addRepo());
     this.elements.addEnvButton.addEventListener("click", () => this.addEnv());
-    this.elements.refreshIntervalInput.addEventListener("change", (e) => this.updateRefreshInterval(e));
-    this.elements.saveTokenButton.addEventListener("click", () => this.handleTokenSave());
+    this.elements.refreshIntervalInput.addEventListener("change", (e) =>
+      this.updateRefreshInterval(e)
+    );
+    this.elements.saveTokenButton.addEventListener("click", () =>
+      this.handleTokenSave()
+    );
   }
 
   toggleConfig() {
@@ -116,9 +122,15 @@ export class UIManager {
     const li = document.createElement("li");
     li.className = "config-item";
     li.innerHTML = `
-      <input type="text" placeholder="Owner" value="${repo.owner}" data-field="owner">
-      <input type="text" placeholder="Repository" value="${repo.repo}" data-field="repo">
-      <input type="text" placeholder="Display Name (optional)" value="${repo.displayName || ""}" data-field="displayName">
+      <input type="text" placeholder="Owner" value="${
+        repo.owner
+      }" data-field="owner">
+      <input type="text" placeholder="Repository" value="${
+        repo.repo
+      }" data-field="repo">
+      <input type="text" placeholder="Display Name (optional)" value="${
+        repo.displayName || ""
+      }" data-field="displayName">
       <button class="remove">✕</button>
     `;
 
@@ -131,7 +143,9 @@ export class UIManager {
     li.className = "config-item";
     li.innerHTML = `
       <input type="text" placeholder="Environment" value="${env}">
-      <input type="color" value="${this.configManager.getConfig().colors[env] || "#808080"}" title="Environment color">
+      <input type="color" value="${
+        this.configManager.getConfig().colors[env] || "#808080"
+      }" title="Environment color">
       <button class="remove">✕</button>
     `;
 
@@ -222,7 +236,9 @@ export class UIManager {
     }
 
     card.appendChild(this.createRepoNameElement(deployment));
-    card.appendChild(this.createBranchInfoElement(deployment, currentEnv, allDeployments));
+    card.appendChild(
+      this.createBranchInfoElement(deployment, currentEnv, allDeployments)
+    );
 
     return card;
   }
@@ -230,7 +246,8 @@ export class UIManager {
   createRepoNameElement(deployment) {
     const repoName = document.createElement("div");
     repoName.className = "repo-name";
-    repoName.textContent = deployment.repository.displayName || deployment.repository.repo;
+    repoName.textContent =
+      deployment.repository.displayName || deployment.repository.repo;
     return repoName;
   }
 
@@ -243,9 +260,11 @@ export class UIManager {
     }
 
     branchInfo.appendChild(this.createBranchNameElement(deployment));
-    
+
     if (deployment.sha) {
-      branchInfo.appendChild(this.createShaElement(deployment, currentEnv, allDeployments));
+      branchInfo.appendChild(
+        this.createShaElement(deployment, currentEnv, allDeployments)
+      );
     }
 
     return branchInfo;
@@ -257,23 +276,25 @@ export class UIManager {
     timeLine.textContent = "deployed: ";
 
     const date = dayjs(deployment.created_at);
-    const formattedTime = date.format('YYYY-MM-DD HH:mm');
+    const formattedTime = date.format("YYYY-MM-DD HH:mm");
     const relativeTime = date.fromNow();
 
     const timeLink = document.createElement("a");
     timeLink.title = formattedTime;
-    
+
     if (deployment.run_id) {
       timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/actions/runs/${deployment.run_id}`;
     } else {
       timeLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/deployments/${deployment.environment}`;
     }
-    
+
     timeLink.target = "_blank";
     timeLink.textContent = relativeTime;
-    
+
     if (deployment.status) {
-      timeLink.title = `${formattedTime} - ${deployment.status.description || deployment.status.state}`;
+      timeLink.title = `${formattedTime} - ${
+        deployment.status.description || deployment.status.state
+      }`;
     }
 
     timeLine.appendChild(timeLink);
@@ -283,13 +304,24 @@ export class UIManager {
   createBranchNameElement(deployment) {
     const branchName = document.createElement("div");
     branchName.className = "branch-name";
-    branchName.textContent = "ref: ";
 
-    if (deployment.ref) {
+    // Check if this deployment has a tag (will be set by app.js)
+    const displayName = deployment.tag || deployment.ref;
+    const labelText = deployment.tag ? "tag: " : "ref: ";
+
+    branchName.textContent = labelText;
+
+    if (displayName) {
       const branchLink = document.createElement("a");
-      branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${deployment.ref}`;
+      if (deployment.tag) {
+        // Link to tag/release page
+        branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/releases/tag/${displayName}`;
+      } else {
+        // Link to branch
+        branchLink.href = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/tree/${displayName}`;
+      }
       branchLink.target = "_blank";
-      branchLink.textContent = deployment.ref;
+      branchLink.textContent = displayName;
       branchName.appendChild(branchLink);
     } else {
       branchName.appendChild(document.createTextNode("Unknown"));
@@ -310,7 +342,11 @@ export class UIManager {
     shaLine.appendChild(shaLink);
 
     shaLine.appendChild(document.createTextNode(" ("));
-    const compareButton = this.createCompareButton(deployment, currentEnv, allDeployments);
+    const compareButton = this.createCompareButton(
+      deployment,
+      currentEnv,
+      allDeployments
+    );
     shaLine.appendChild(compareButton);
     shaLine.appendChild(document.createTextNode(")"));
 
@@ -323,7 +359,11 @@ export class UIManager {
     compareButton.textContent = "compare";
     compareButton.title = "Compare with other environments";
 
-    const compareMenu = this.createCompareMenu(deployment, currentEnv, allDeployments);
+    const compareMenu = this.createCompareMenu(
+      deployment,
+      currentEnv,
+      allDeployments
+    );
     document.body.appendChild(compareMenu);
 
     compareButton.addEventListener("click", (e) => {
@@ -332,7 +372,8 @@ export class UIManager {
       compareMenu.style.position = "absolute";
       compareMenu.style.left = `${rect.left}px`;
       compareMenu.style.top = `${rect.bottom + 5}px`;
-      compareMenu.style.display = compareMenu.style.display === "none" ? "block" : "none";
+      compareMenu.style.display =
+        compareMenu.style.display === "none" ? "block" : "none";
     });
 
     document.addEventListener("click", () => {
@@ -348,18 +389,22 @@ export class UIManager {
     compareMenu.style.display = "none";
 
     const config = this.configManager.getConfig();
-    config.environments.forEach(targetEnv => {
+    config.environments.forEach((targetEnv) => {
       if (targetEnv === currentEnv) return;
 
-      const targetDeployment = allDeployments.find(d => 
-        d.environment === targetEnv && 
-        d.repository.owner === deployment.repository.owner &&
-        d.repository.repo === deployment.repository.repo
+      const targetDeployment = allDeployments.find(
+        (d) =>
+          d.environment === targetEnv &&
+          d.repository.owner === deployment.repository.owner &&
+          d.repository.repo === deployment.repository.repo
       );
 
       const button = document.createElement("button");
       if (targetDeployment) {
-        button.textContent = `${targetEnv.toUpperCase()} (${targetDeployment.sha.substring(0, 7)})`;
+        button.textContent = `${targetEnv.toUpperCase()} (${targetDeployment.sha.substring(
+          0,
+          7
+        )})`;
         button.addEventListener("click", () => {
           const compareUrl = `https://github.com/${deployment.repository.owner}/${deployment.repository.repo}/compare/${targetDeployment.sha}..${deployment.sha}`;
           window.open(compareUrl, "_blank");
